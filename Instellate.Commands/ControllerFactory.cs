@@ -244,7 +244,7 @@ public class ControllerFactory
         }
 
         await ExecuteControllerAsync(executor,
-            options.ToArray(),
+            options,
             scope.ServiceProvider,
             actionContext,
             client,
@@ -365,11 +365,10 @@ public class ControllerFactory
             }
         }
 
-        
         try
         {
             await ExecuteControllerAsync(executor,
-                options.ToArray(),
+                options,
                 scope.ServiceProvider,
                 actionContext,
                 client,
@@ -427,6 +426,7 @@ public class ControllerFactory
             IConverter converter = (IConverter)this._provider.GetRequiredService(converterType);
             CommandOption commandOption = converter.ConstructOption(metadata);
             commandOption.ConverterType = converterType;
+            commandOption.ParameterType = parameter.ParameterType;
             options.Add(commandOption);
         }
 
@@ -434,7 +434,7 @@ public class ControllerFactory
     }
 
     private async Task ExecuteControllerAsync(Command command,
-        object?[]? options,
+        IReadOnlyList<object?> options,
         IServiceProvider provider,
         IActionContext actionContext,
         DiscordClient client,
@@ -443,21 +443,19 @@ public class ControllerFactory
         DiscordMessage? message)
     {
         BaseController controller =
-            (BaseController)provider.GetRequiredService(command.Method
-                .DeclaringType!);
-
+            (BaseController)provider.GetRequiredService(command.Method.DeclaringType!);
         controller.ActionContext = actionContext;
         controller.Client = client;
         controller.Author = author;
         controller.Channel = channel;
         controller.Message = message;
 
-        object? methodResult = command.Method.Invoke(controller, options);
-        if (methodResult is IActionResult actionResult)
+        object result = command.ExecutionLambda(controller, options);
+        if (result is IActionResult actionResult)
         {
             await actionResult.ExecuteResultAsync(actionContext);
         }
-        else if (methodResult is Task<IActionResult> task)
+        else if (result is Task<IActionResult> task)
         {
             await (await task).ExecuteResultAsync(actionContext);
         }

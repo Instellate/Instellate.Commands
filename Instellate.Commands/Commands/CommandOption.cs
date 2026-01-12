@@ -11,7 +11,10 @@ public class CommandOption
     public object? MinValue { get; set; }
     public bool Optional { get; set; }
     public int? Positional { get; set; }
-    public Type ConverterType { get; internal set; } = null!; // Should always be set
+
+    // These should always be set
+    public Type ConverterType { get; internal set; } = null!;
+    public Type ParameterType { get; internal set; } = null!;
 
     public CommandOption(string name, string description, bool optional, int? positional)
     {
@@ -23,13 +26,11 @@ public class CommandOption
 
     public DiscordApplicationCommandOption ConstructEntity()
     {
-#pragma warning disable CS8604 // Possible null reference argument.
         return new DiscordApplicationCommandOption(this.Name,
             this.Description,
             this.Type,
             !this.Optional,
-            minValue: this.MinValue,
-            maxValue: this.MaxValue);
-#pragma warning restore CS8604 // Possible null reference argument.
+            minValue: this.MinValue!,
+            maxValue: this.MaxValue!);
     }
 }

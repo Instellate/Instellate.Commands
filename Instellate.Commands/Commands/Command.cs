@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using DSharpPlus.Entities;
 using Instellate.Commands.Attributes.Application;
+using Instellate.Commands.Controllers;
 
 namespace Instellate.Commands.Commands;
 
@@ -11,6 +13,7 @@ public class Command : ICommand
     public IReadOnlyList<CommandOption> Options { get; }
     public DiscordApplicationCommandType? ApplicationCommandType { get; }
     internal MethodInfo Method { get; }
+    internal Func<BaseController, IReadOnlyList<object?>, object> ExecutionLambda { get; }
 
     internal Command(string name,
         string? description,
@@ -22,6 +25,7 @@ public class Command : ICommand
         this.Options = options;
         this.Method = method;
         this.ApplicationCommandType = method.GetCustomAttribute<ApplicationTypeAttribute>()?.Type;
+        this.ExecutionLambda = BuildExecutionLambda(method, options);
     }
 
     public DiscordApplicationCommand ConstructApplicationCommand()
@@ -31,7 +35,6 @@ public class Command : ICommand
         {
             options.Add(option.ConstructEntity());
         }
-
 
         return new DiscordApplicationCommand(this.Name,
             this.Description!,
@@ -52,5 +55,42 @@ public class Command : ICommand
             this.Description!,
             type: DiscordApplicationCommandOptionType.SubCommand,
             options: options);
+    }
+
+    private static Func<BaseController, IReadOnlyList<object?>, object> BuildExecutionLambda(
+        MethodInfo method,
+        IReadOnlyList<CommandOption> options)
+    {
+        Type methodClass = method.DeclaringType!;
+
+        ParameterExpression optionValues
+            = Expression.Parameter(typeof(IReadOnlyList<>).MakeGenericType(typeof(object)));
+        ParameterExpression controller = Expression.Parameter(typeof(BaseController));
+
+        List<Expression> arguments = new(options.Count);
+        for (int i = 0; i < options.Count; i++)
+        {
+            CommandOption option = options[i];
+            arguments.Add(Expression.ConvertChecked(
+                Expression.Property(optionValues, "Item", Expression.Constant(i)),
+                option.ParameterType
+            ));
+        }
+
+        BlockExpression block = Expression.Block(Expression.Call(
+            Expression.ConvertChecked(controller, methodClass),
+            method,
+            arguments
+        ));
+
+        Func<BaseController, IReadOnlyList<object?>, object> lambda =
+            Expression.Lambda<Func<BaseController, IReadOnlyList<object?>, object>>(
+                    block,
+                    controller,
+                    optionValues
+                )
+                .Compile();
+
+        return lambda;
     }
 }

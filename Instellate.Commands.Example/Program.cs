@@ -33,6 +33,7 @@ public static class Program
         client.Logger.LogInformation("Registering application commands");
         await client.RegisterApplicationCommands(config.GetValue<ulong>("GUILD_ID"));
 
+        client.Logger.LogInformation("Bot is ready");
         await Task.Delay(-1);
     }
 
