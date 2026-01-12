@@ -40,9 +40,11 @@ public class UtilityController : BaseController
             .AddField("Gateway latency", $"{Math.Round(latency.TotalMilliseconds)}ms", false);
     }
 
-    [Command("test", "Test command")]
-    public IActionResult Test([Option("test", "Test option")] bool test)
+    [Command("defer", "Deferring test")]
+    public async Task<IActionResult> DeferringAsync()
     {
-        return Text(test ? "Yes" : "No");
+        await DeferAsync();
+        await Task.Delay(3000);
+        return Text("Deferred!");
     }
 }

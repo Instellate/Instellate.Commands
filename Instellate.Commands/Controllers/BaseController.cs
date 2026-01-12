@@ -26,4 +26,9 @@ public abstract class BaseController
     {
         return new EmbedActionResult(builder);
     }
+
+    protected Task DeferAsync()
+    {
+        return this.ActionContext.DeferAsync();
+    }
 }
