@@ -25,19 +25,28 @@ internal class InteractionActionContext : IActionContext
         }
     }
 
-    public Task CreateResponseAsync(IDiscordMessageBuilder builder)
+    public Task CreateResponseAsync(IDiscordMessageBuilder builder, bool ephemeral)
     {
         if (this._deferred == 1)
         {
             DiscordFollowupMessageBuilder followupBuilder = new(builder);
+            followupBuilder.AsEphemeral(ephemeral);
             return this._interaction.CreateFollowupMessageAsync(followupBuilder);
         }
         else
         {
             DiscordInteractionResponseBuilder responseBuilder = new(builder);
+            responseBuilder.AsEphemeral(ephemeral);
             return this._interaction.CreateResponseAsync(
                 DiscordInteractionResponseType.ChannelMessageWithSource,
                 responseBuilder);
         }
+    }
+
+    public Task CreateModalResponseAsync(DiscordModalBuilder modal)
+    {
+        return this._interaction.CreateResponseAsync(
+            DiscordInteractionResponseType.DeferredChannelMessageWithSource,
+            modal);
     }
 }

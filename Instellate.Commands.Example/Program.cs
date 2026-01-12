@@ -1,6 +1,5 @@
 ﻿using DSharpPlus;
 using DSharpPlus.EventArgs;
-using Instellate.Commands.Commands.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,7 +40,7 @@ public static class Program
     {
         collection
             .AddCommands()
-            .AddSingleton<IPrefixResolver, PrefixResolver>();
+            .AddStaticPrefixResolver("t!");
     }
 
     private static Task HandleSessionCreatedAsync(DiscordClient client, SessionCreatedEventArgs e)

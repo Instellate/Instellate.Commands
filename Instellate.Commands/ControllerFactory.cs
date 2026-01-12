@@ -169,6 +169,11 @@ public class ControllerFactory
             return;
         }
 
+        if (executor.ApplicationCommandType is not null)
+        {
+            return;
+        }
+
         if (i < result.Commands.Count)
         {
             List<string> remainingPositional =
@@ -176,6 +181,7 @@ public class ControllerFactory
             result.PositionalArguments.InsertRange(0, remainingPositional);
         }
 
+        MessageActionContext actionContext = new(e);
         List<object?> options = new(executor.Options.Count);
         foreach (CommandOption option in executor.Options)
         {
@@ -215,12 +221,28 @@ public class ControllerFactory
                 }
             }
 
-            IConverter converter =
-                (IConverter)scope.ServiceProvider.GetRequiredService(option.ConverterType);
-            options.Add(converter.ConvertFromString(strOption));
+            try
+            {
+                IConverter converter =
+                    (IConverter)scope.ServiceProvider.GetRequiredService(option.ConverterType);
+                options.Add(converter.ConvertFromString(strOption));
+            }
+            catch (Exception exception)
+            {
+                IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
+                if (errorHandler is not null)
+                {
+                    IActionResult actionResult = await errorHandler.HandleConverterError(executor,
+                        option,
+                        strOption,
+                        exception);
+                    await actionResult.ExecuteResultAsync(actionContext);
+                }
+
+                return;
+            }
         }
 
-        MessageActionContext actionContext = new(e);
         await ExecuteControllerAsync(executor,
             options.ToArray(),
             scope.ServiceProvider,
@@ -296,6 +318,7 @@ public class ControllerFactory
             return;
         }
 
+        InteractionActionContext actionContext = new(interaction);
         List<object?> options = new(executor.Options.Count);
         foreach (CommandOption option in executor.Options)
         {
@@ -320,22 +343,51 @@ public class ControllerFactory
                 throw new NotImplementedException($"Option {option.Name} not found");
             }
 
-            IConverter converter =
-                (IConverter)scope.ServiceProvider.GetRequiredService(option.ConverterType);
-            options.Add(converter.ConvertFromObject(dataOption.Value));
+            try
+            {
+                IConverter converter =
+                    (IConverter)scope.ServiceProvider.GetRequiredService(option.ConverterType);
+                options.Add(converter.ConvertFromObject(dataOption.Value));
+            }
+            catch (Exception exception)
+            {
+                IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
+                if (errorHandler is not null)
+                {
+                    IActionResult actionResult = await errorHandler.HandleConverterError(executor,
+                        option,
+                        dataOption.Value,
+                        exception);
+                    await actionResult.ExecuteResultAsync(actionContext);
+                }
+
+                return;
+            }
         }
 
-        InteractionActionContext actionContext = new(interaction);
-        await ExecuteControllerAsync(executor,
-            options.ToArray(),
-            scope.ServiceProvider,
-            actionContext,
-            client,
-            interaction.User,
-            interaction.Channel,
-            interaction.Message);
+        
+        try
+        {
+            await ExecuteControllerAsync(executor,
+                options.ToArray(),
+                scope.ServiceProvider,
+                actionContext,
+                client,
+                interaction.User,
+                interaction.Channel,
+                interaction.Message);
+        }
+        catch (Exception exception)
+        {
+            IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
+            if (errorHandler is not null)
+            {
+                IActionResult actionResult =
+                    await errorHandler.HandleCommandError(executor, exception);
+                await actionResult.ExecuteResultAsync(actionContext);
+            }
+        }
     }
-
 
     private IReadOnlyList<CommandOption> GetOptionsForMethod(MethodInfo method)
     {

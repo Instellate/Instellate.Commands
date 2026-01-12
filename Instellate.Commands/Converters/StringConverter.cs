@@ -1,4 +1,3 @@
-using CommunityToolkit.HighPerformance;
 using DSharpPlus.Entities;
 using Instellate.Commands.Commands;
 
@@ -8,6 +7,17 @@ public class StringConverter : IConverter<string>
 {
     public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.String;
 
+    public CommandOption ConstructOption(CommandOptionMetadata metadata)
+    {
+        return new CommandOption(metadata.Name,
+            metadata.Description,
+            metadata.Optional,
+            metadata.Positional)
+        {
+            Type = this.Type
+        };
+    }
+    
     public object ConvertFromObject(object? obj)
     {
         if (obj is not string)

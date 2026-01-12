@@ -24,7 +24,6 @@ public readonly struct Optional<T>
     {
         this.IsPresent = isPresent;
     }
-
     
     public bool TryGetValue([MaybeNullWhen(false)] out T value)
     {
@@ -38,5 +37,10 @@ public readonly struct Optional<T>
             value = default;
             return false;
         }
+    }
+
+    public override string? ToString()
+    {
+        return Value?.ToString();
     }
 }

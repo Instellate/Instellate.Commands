@@ -23,9 +23,14 @@ internal sealed class MessageActionContext : IActionContext
         return Task.CompletedTask;
     }
 
-    public Task CreateResponseAsync(IDiscordMessageBuilder builder)
+    public Task CreateResponseAsync(IDiscordMessageBuilder builder, bool ephemeral)
     {
         DiscordMessageBuilder messageBuilder = new(builder);
         return this._messageEvent.Message.RespondAsync(messageBuilder);
+    }
+
+    public Task CreateModalResponseAsync(DiscordModalBuilder modal)
+    {
+        throw new NotSupportedException();
     }
 }

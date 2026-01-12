@@ -1,17 +1,19 @@
 using System.Reflection;
 using DSharpPlus.Entities;
+using Instellate.Commands.Attributes.Application;
 
 namespace Instellate.Commands.Commands;
 
 public class Command : ICommand
 {
     public string Name { get; }
-    public string Description { get; }
+    public string? Description { get; }
     public IReadOnlyList<CommandOption> Options { get; }
+    public DiscordApplicationCommandType? ApplicationCommandType { get; }
     internal MethodInfo Method { get; }
 
     internal Command(string name,
-        string description,
+        string? description,
         IReadOnlyList<CommandOption> options,
         MethodInfo method)
     {
@@ -19,6 +21,7 @@ public class Command : ICommand
         this.Description = description;
         this.Options = options;
         this.Method = method;
+        this.ApplicationCommandType = method.GetCustomAttribute<ApplicationTypeAttribute>()?.Type;
     }
 
     public DiscordApplicationCommand ConstructApplicationCommand()
@@ -29,7 +32,11 @@ public class Command : ICommand
             options.Add(option.ConstructEntity());
         }
 
-        return new DiscordApplicationCommand(this.Name, this.Description, options: options);
+
+        return new DiscordApplicationCommand(this.Name,
+            this.Description!,
+            options: options,
+            type: this.ApplicationCommandType ?? DiscordApplicationCommandType.SlashCommand);
     }
 
     public DiscordApplicationCommandOption ConstructApplicationCommandOption()
@@ -42,7 +49,7 @@ public class Command : ICommand
 
         return new DiscordApplicationCommandOption(
             this.Name,
-            this.Description,
+            this.Description!,
             type: DiscordApplicationCommandOptionType.SubCommand,
             options: options);
     }

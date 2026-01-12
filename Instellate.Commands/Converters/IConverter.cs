@@ -7,16 +7,7 @@ public interface IConverter
 {
     DiscordApplicationCommandOptionType Type { get; }
 
-    CommandOption ConstructOption(CommandOptionMetadata metadata)
-    {
-        return new CommandOption(metadata.Name,
-            metadata.Description,
-            metadata.Optional,
-            metadata.Positional)
-        {
-            Type = this.Type
-        };
-    }
+    CommandOption ConstructOption(CommandOptionMetadata metadata);
 
     object? ConvertFromObject(object? obj);
 

@@ -1,6 +1,7 @@
 using System.Reflection;
 using DSharpPlus;
 using Instellate.Commands.Attributes;
+using Instellate.Commands.Commands.Text;
 using Instellate.Commands.Converters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,25 +10,35 @@ namespace Instellate.Commands;
 
 public static class CommandsServiceExtensions
 {
-    public static IServiceCollection AddCommands(this IServiceCollection collection)
+    extension(IServiceCollection collection)
     {
-        Assembly assembly = Assembly.GetCallingAssembly();
-
-        foreach (Type type in assembly.GetExportedTypes())
+        public IServiceCollection AddCommands()
         {
-            if (type.GetCustomAttribute<BaseControllerAttribute>() is null)
+            Assembly assembly = Assembly.GetCallingAssembly();
+
+            foreach (Type type in assembly.GetExportedTypes())
             {
-                continue;
+                if (type.GetCustomAttribute<BaseControllerAttribute>() is null)
+                {
+                    continue;
+                }
+
+                collection.AddScoped(type);
             }
 
-            collection.AddScoped(type);
+            collection.AddSingleton<ControllerFactory>()
+                .AddSingleton<IConverter<string>, StringConverter>()
+                .AddSingleton<IConverter<int>, Int32Converter>()
+                .AddSingleton<IConverter<bool>, BoolConverter>();
+            return collection;
         }
 
-        collection.AddSingleton<ControllerFactory>()
-            .AddSingleton<IConverter<string>, StringConverter>()
-            .AddSingleton<IConverter<int>, Int32Converter>()
-            .AddSingleton<IConverter<bool>, BoolConverter>();
-        return collection;
+        public IServiceCollection AddStaticPrefixResolver(string prefix)
+        {
+            collection.AddSingleton<IPrefixResolver, StaticPrefixResolver>((_) =>
+                new StaticPrefixResolver(prefix));
+            return collection;
+        }
     }
 
     public static IServiceProvider MapCommandControllers(this IServiceProvider provider)

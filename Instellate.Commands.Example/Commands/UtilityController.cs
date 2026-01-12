@@ -1,6 +1,7 @@
 using DSharpPlus.Clients;
+using DSharpPlus.Entities;
 using Instellate.Commands.Attributes;
-using Instellate.Commands.Attributes.Text;
+using Instellate.Commands.Attributes.Application;
 using Instellate.Commands.Controllers;
 
 namespace Instellate.Commands.Example.Commands;

@@ -4,7 +4,9 @@ namespace Instellate.Commands.Actions;
 
 public interface IActionContext
 {
-    public Task DeferAsync();
+    Task DeferAsync();
 
-    public Task CreateResponseAsync(IDiscordMessageBuilder builder);
+    Task CreateResponseAsync(IDiscordMessageBuilder builder, bool ephemeral = false);
+
+    Task CreateModalResponseAsync(DiscordModalBuilder modal);
 }

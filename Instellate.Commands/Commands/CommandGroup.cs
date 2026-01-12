@@ -7,10 +7,10 @@ public class CommandGroup : ICommand
     internal readonly Dictionary<string, ICommand> _children = new();
 
     public string Name { get; }
-    public string Description { get; }
+    public string? Description { get; }
     public IReadOnlyDictionary<string, ICommand> Children => this._children;
 
-    internal CommandGroup(string name, string description)
+    internal CommandGroup(string name, string? description)
     {
         this.Name = name;
         this.Description = description;
@@ -24,7 +24,7 @@ public class CommandGroup : ICommand
             children.Add(child.ConstructApplicationCommandOption());
         }
 
-        return new DiscordApplicationCommand(this.Name, this.Description, options: children);
+        return new DiscordApplicationCommand(this.Name, this.Description!, options: children);
     }
 
     public DiscordApplicationCommandOption ConstructApplicationCommandOption()
@@ -36,7 +36,7 @@ public class CommandGroup : ICommand
         }
 
         return new DiscordApplicationCommandOption(this.Name,
-            this.Description,
+            this.Description!,
             DiscordApplicationCommandOptionType.SubCommand,
             options: children);
     }

@@ -6,8 +6,18 @@ namespace Instellate.Commands.Converters;
 public class BoolConverter : IConverter<bool>
 {
     public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.Boolean;
-
-
+    
+    public CommandOption ConstructOption(CommandOptionMetadata metadata)
+    {
+        return new CommandOption(metadata.Name,
+            metadata.Description,
+            metadata.Optional,
+            metadata.Positional)
+        {
+            Type = this.Type
+        };
+    }
+    
     public object ConvertFromObject(object? obj)
     {
         if (obj is not bool)
