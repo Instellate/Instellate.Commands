@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace Instellate.Commands.Attributes;
 
+[MeansImplicitUse]
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
 public class CommandAttribute : Attribute
 {

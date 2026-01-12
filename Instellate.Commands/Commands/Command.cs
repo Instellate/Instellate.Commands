@@ -10,10 +10,13 @@ public class Command : ICommand
     public IReadOnlyList<CommandOption> Options { get; }
     internal MethodInfo Method { get; }
 
-    internal Command(string name, string description, IReadOnlyList<CommandOption> options,
+    internal Command(string name,
+        string description,
+        IReadOnlyList<CommandOption> options,
         MethodInfo method)
     {
         this.Name = name;
+        this.Description = description;
         this.Options = options;
         this.Method = method;
     }

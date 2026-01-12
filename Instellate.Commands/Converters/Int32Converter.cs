@@ -20,7 +20,7 @@ public class Int32Converter : IConverter<int>
         };
     }
 
-    public object ConvertFromObject(object obj)
+    public object ConvertFromObject(object? obj)
     {
         if (obj is not int)
         {
@@ -30,9 +30,13 @@ public class Int32Converter : IConverter<int>
         return obj;
     }
 
-    public object ConvertFromString(string? input)
+    public object ConvertFromString(Optional<string> input)
     {
-        ArgumentNullException.ThrowIfNull(input);
-        return int.Parse(input);
+        if (input.TryGetValue(out string? value))
+        {
+            return int.Parse(value);
+        }
+
+        throw new ArgumentNullException(nameof(input));
     }
 }

@@ -2,6 +2,7 @@ using System.Reflection;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using Instellate.Commands.Actions;
 using Instellate.Commands.ArgumentParser;
 using Instellate.Commands.Attributes;
 using Instellate.Commands.Attributes.Text;
@@ -84,11 +85,6 @@ public class ControllerFactory
         this._logger.LogTrace("Finished mapping controllers");
     }
 
-    public void RegisterDiscordEvents(EventHandlingBuilder builder)
-    {
-        builder.HandleMessageCreated(this.HandleMessageAsync);
-    }
-
     public Task RegisterCommandsAsync(DiscordClient client, ulong? debugGuildId)
     {
         List<DiscordApplicationCommand> commands = new(this._commands.Count);
@@ -107,51 +103,7 @@ public class ControllerFactory
         }
     }
 
-    private IReadOnlyList<CommandOption> GetOptionsForMethod(MethodInfo method)
-    {
-        List<CommandOption> options = [];
-        NullabilityInfoContext nullabilityInfoContext = new();
-
-        foreach (ParameterInfo parameter in method.GetParameters())
-        {
-            OptionAttribute? option = parameter.GetCustomAttribute<OptionAttribute>();
-            if (option is null)
-            {
-                throw new NotImplementedException("Proper error message not implemented");
-            }
-
-            int? positional = null;
-            PositionalAttribute? positionalAttribute =
-                parameter.GetCustomAttribute<PositionalAttribute>();
-            if (positionalAttribute is not null)
-            {
-                positional = positionalAttribute.Index;
-            }
-
-            bool optional = nullabilityInfoContext.Create(parameter).ReadState ==
-                            NullabilityState.Nullable;
-
-            CommandOptionMetadata metadata = new(option.Name,
-                option.Description,
-                optional,
-                positional)
-            {
-                MinValue = parameter.GetCustomAttribute<MinValueAttribute>()?.Value,
-                MaxValue = parameter.GetCustomAttribute<MaxValueAttribute>()?.Value
-            };
-
-            Type converterType = typeof(IConverter<>).MakeGenericType(parameter.ParameterType);
-
-            IConverter converter = (IConverter)this._provider.GetRequiredService(converterType);
-            CommandOption commandOption = converter.ConstructOption(metadata);
-            commandOption.ConverterType = converterType;
-            options.Add(commandOption);
-        }
-
-        return options;
-    }
-
-    private async Task HandleMessageAsync(DiscordClient client, MessageCreatedEventArgs e)
+    internal async Task HandleMessageCreatedAsync(DiscordClient client, MessageCreatedEventArgs e)
     {
         using IServiceScope scope = this._provider.CreateScope();
 
@@ -227,40 +179,39 @@ public class ControllerFactory
         List<object?> options = new(executor.Options.Count);
         foreach (CommandOption option in executor.Options)
         {
-            string? strOption;
+            Converters.Optional<string> strOption;
             if (option.Positional is { } pos)
             {
                 if (result.PositionalArguments.Count <= pos)
                 {
-                    if (!option.Optional)
+                    if (option.Optional)
                     {
-                        // Not optional and cannot get positional
-                        throw new NotImplementedException("Error not implemented");
+                        options.Add(null);
+                        continue;
                     }
 
-                    options.Add(null);
-                    continue;
+                    strOption = new Converters.Optional<string>(false);
                 }
                 else
                 {
-                    strOption = result.PositionalArguments[pos];
+                    strOption = new Converters.Optional<string>(result.PositionalArguments[pos]);
                 }
             }
             else
             {
                 if (result.Options.TryGetValue(option.Name, out string? value))
                 {
-                    strOption = value;
+                    strOption = new Converters.Optional<string>(value, true);
                 }
                 else
                 {
-                    if (!option.Optional)
+                    if (option.Optional)
                     {
-                        throw new NotImplementedException("Error not implemented");
+                        options.Add(null);
+                        continue;
                     }
 
-                    options.Add(null);
-                    continue;
+                    strOption = new Converters.Optional<string>(false);
                 }
             }
 
@@ -269,10 +220,194 @@ public class ControllerFactory
             options.Add(converter.ConvertFromString(strOption));
         }
 
+        MessageActionContext actionContext = new(e);
+        await ExecuteControllerAsync(executor,
+            options.ToArray(),
+            scope.ServiceProvider,
+            actionContext,
+            client,
+            e.Author,
+            e.Channel,
+            e.Message);
+    }
+
+    internal async Task HandleInteractionCreatedAsync(DiscordClient client,
+        InteractionCreatedEventArgs e)
+    {
+        using IServiceScope scope = this._provider.CreateScope();
+
+        DiscordInteraction interaction = e.Interaction;
+
+        string name = interaction.Data.Name;
+        IReadOnlyList<DiscordInteractionDataOption> dataOptions = e.Interaction.Data.Options;
+
+        ICommand? command = null;
+        while (true)
+        {
+            if (command is CommandGroup commandGroup)
+            {
+                bool foundSubcCommand = false;
+                foreach (DiscordInteractionDataOption option in dataOptions)
+                {
+                    if (option.Type == DiscordApplicationCommandOptionType.SubCommand ||
+                        option.Type == DiscordApplicationCommandOptionType.SubCommandGroup)
+                    {
+                        name = option.Name;
+                        dataOptions = option.Options;
+                        foundSubcCommand = true;
+                        break;
+                    }
+                }
+
+                if (!foundSubcCommand)
+                {
+                    this._logger.LogWarning(
+                        "Couldn't find subcommand for command group {CommandGroup}",
+                        commandGroup.Name);
+                    return;
+                }
+
+                if (!commandGroup.Children.TryGetValue(name, out command))
+                {
+                    this._logger.LogWarning(
+                        "Couldn't get command with name {Name} for command group {CommandGroup}",
+                        name,
+                        commandGroup.Name);
+                    return;
+                }
+            }
+            else if (command is null)
+            {
+                if (!this._commands.TryGetValue(name, out command))
+                {
+                    this._logger.LogWarning("Couldn't get command with name {Name}", name);
+                    return;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (command is not Command executor)
+        {
+            // Couldn't find command
+            return;
+        }
+
+        List<object?> options = new(executor.Options.Count);
+        foreach (CommandOption option in executor.Options)
+        {
+            DiscordInteractionDataOption? dataOption = null;
+            foreach (DiscordInteractionDataOption d in dataOptions)
+            {
+                if (d.Name == option.Name)
+                {
+                    dataOption = d;
+                    break;
+                }
+            }
+
+            if (dataOption is null)
+            {
+                if (option.Optional)
+                {
+                    options.Add(null);
+                    continue;
+                }
+
+                throw new NotImplementedException($"Option {option.Name} not found");
+            }
+
+            IConverter converter =
+                (IConverter)scope.ServiceProvider.GetRequiredService(option.ConverterType);
+            options.Add(converter.ConvertFromObject(dataOption.Value));
+        }
+
+        InteractionActionContext actionContext = new(interaction);
+        await ExecuteControllerAsync(executor,
+            options.ToArray(),
+            scope.ServiceProvider,
+            actionContext,
+            client,
+            interaction.User,
+            interaction.Channel,
+            interaction.Message);
+    }
+
+
+    private IReadOnlyList<CommandOption> GetOptionsForMethod(MethodInfo method)
+    {
+        List<CommandOption> options = [];
+        NullabilityInfoContext nullabilityInfoContext = new();
+
+        foreach (ParameterInfo parameter in method.GetParameters())
+        {
+            OptionAttribute? option = parameter.GetCustomAttribute<OptionAttribute>();
+            if (option is null)
+            {
+                throw new NotImplementedException("Proper error message not implemented");
+            }
+
+            int? positional = null;
+            PositionalAttribute? positionalAttribute =
+                parameter.GetCustomAttribute<PositionalAttribute>();
+            if (positionalAttribute is not null)
+            {
+                positional = positionalAttribute.Index;
+            }
+
+            bool optional = nullabilityInfoContext.Create(parameter).ReadState ==
+                NullabilityState.Nullable || parameter.HasDefaultValue;
+
+            CommandOptionMetadata metadata = new(option.Name,
+                option.Description,
+                optional,
+                positional)
+            {
+                MinValue = parameter.GetCustomAttribute<MinValueAttribute>()?.Value,
+                MaxValue = parameter.GetCustomAttribute<MaxValueAttribute>()?.Value
+            };
+
+            Type converterType = typeof(IConverter<>).MakeGenericType(parameter.ParameterType);
+
+            IConverter converter = (IConverter)this._provider.GetRequiredService(converterType);
+            CommandOption commandOption = converter.ConstructOption(metadata);
+            commandOption.ConverterType = converterType;
+            options.Add(commandOption);
+        }
+
+        return options;
+    }
+
+    private async Task ExecuteControllerAsync(Command command,
+        object?[]? options,
+        IServiceProvider provider,
+        IActionContext actionContext,
+        DiscordClient client,
+        DiscordUser author,
+        DiscordChannel channel,
+        DiscordMessage? message)
+    {
         BaseController controller =
-            (BaseController)scope.ServiceProvider.GetRequiredService(executor.Method
+            (BaseController)provider.GetRequiredService(command.Method
                 .DeclaringType!);
 
-        executor.Method.Invoke(controller, options.ToArray());
+        controller.ActionContext = actionContext;
+        controller.Client = client;
+        controller.Author = author;
+        controller.Channel = channel;
+        controller.Message = message;
+
+        object? methodResult = command.Method.Invoke(controller, options);
+        if (methodResult is IActionResult actionResult)
+        {
+            await actionResult.ExecuteResultAsync(actionContext);
+        }
+        else if (methodResult is Task<IActionResult> task)
+        {
+            await (await task).ExecuteResultAsync(actionContext);
+        }
     }
 }

@@ -41,6 +41,7 @@ public static class Parser
         {
             commands.Add(commandMatch.Groups[1].Value);
             input = input[(commandMatch.Index + commandMatch.Length)..].Trim();
+            commandMatch = commandRegex.Match(input);
         } while (commandMatch.Success);
 
 
@@ -52,6 +53,7 @@ public static class Parser
                 Match match = regex.Match(input);
                 if (match.Success)
                 {
+                    string value = match.Groups[1].Value;
                     switch (token)
                     {
                         case Token.Argument:
@@ -60,18 +62,18 @@ public static class Parser
                                 options.Add(lastArgument, null);
                             }
 
-                            lastArgument = match.Value;
+                            lastArgument = value;
                             break;
 
                         case Token.Value:
                             if (lastArgument is not null)
                             {
-                                options.Add(lastArgument, match.Value);
+                                options.Add(lastArgument, value);
                                 lastArgument = null;
                             }
                             else
                             {
-                                arguments.Add(match.Value);
+                                arguments.Add(value);
                             }
 
                             break;

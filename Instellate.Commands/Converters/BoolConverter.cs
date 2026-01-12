@@ -1,16 +1,16 @@
-using CommunityToolkit.HighPerformance;
 using DSharpPlus.Entities;
 using Instellate.Commands.Commands;
 
 namespace Instellate.Commands.Converters;
 
-public class StringConverter : IConverter<string>
+public class BoolConverter : IConverter<bool>
 {
-    public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.String;
+    public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.Boolean;
+
 
     public object ConvertFromObject(object? obj)
     {
-        if (obj is not string)
+        if (obj is not bool)
         {
             throw new ArgumentException("Object is not string", nameof(obj));
         }
@@ -22,9 +22,14 @@ public class StringConverter : IConverter<string>
     {
         if (input.TryGetValue(out string? value))
         {
-            return value;
+            return bool.Parse(value);
         }
 
-        throw new ArgumentNullException(nameof(input));
+        if (input.IsPresent)
+        {
+            return true;
+        }
+
+        return false;
     }
 }
