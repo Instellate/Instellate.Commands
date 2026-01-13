@@ -33,10 +33,16 @@ public class UtilityController : BaseController
         return Text("Waited!");
     }
 
-    [Command("number", "Number test")]
-    public string NumberTest([Option("num", "A integer")] int num)
+    [Command("modal", "Modal test")]
+    public IActionResult ModalTest()
     {
-        return $"Integer provided: {num}";
+        DiscordModalBuilder modal = new();
+        modal
+            .WithTitle("Test")
+            .WithCustomId("test")
+            .AddTextInput(new DiscordTextInputComponent("cool"), "Wow so cool");
+
+        return Modal(modal);
     }
 
     [ContextMenu("Get User Info")]

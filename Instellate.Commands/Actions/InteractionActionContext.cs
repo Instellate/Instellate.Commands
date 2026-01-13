@@ -49,8 +49,6 @@ public sealed class InteractionActionContext : IActionContext
 
     public Task CreateModalResponseAsync(DiscordModalBuilder modal)
     {
-        return this.Interaction.CreateResponseAsync(
-            DiscordInteractionResponseType.DeferredChannelMessageWithSource,
-            modal);
+        return this.Interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
     }
 }

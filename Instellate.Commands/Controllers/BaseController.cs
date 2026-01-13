@@ -12,6 +12,11 @@ public abstract class BaseController
     public IActionContext ActionContext { get; internal set; } = null!;
     public DiscordMessage? Message { get; internal set; }
 
+    protected MessageActionResult MessageResponse(DiscordMessageBuilder message)
+    {
+        return new MessageActionResult(message);
+    }
+
     protected TextActionResult Text(string content, bool ephemeral = false)
     {
         return new TextActionResult(content, ephemeral);
@@ -27,10 +32,11 @@ public abstract class BaseController
         return new EmbedActionResult(builder);
     }
 
-    protected ModalActionResult Modal()
+    protected ModalActionResult Modal(DiscordModalBuilder modalBuilder)
     {
-        return new ModalActionResult();
+        return new ModalActionResult(modalBuilder);
     }
+
 
     protected Task DeferAsync()
     {
