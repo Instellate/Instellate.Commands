@@ -1,4 +1,5 @@
 using DSharpPlus.Entities;
+using Instellate.Commands.Actions;
 using Instellate.Commands.Commands;
 
 namespace Instellate.Commands.Converters;
@@ -9,12 +10,7 @@ public interface IConverter
 
     CommandOption ConstructOption(CommandOptionMetadata metadata);
 
-    object? ConvertFromObject(object? obj);
+    ValueTask<object?> ConvertFromObject(object? obj, IActionContext context);
 
-    /// <summary>
-    /// Converts a string input.
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    object? ConvertFromString(Optional<string> input);
+    ValueTask<object?> ConvertFromString(Optional<string> input, IActionContext context);
 }

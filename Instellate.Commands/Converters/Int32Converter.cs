@@ -1,4 +1,5 @@
 using DSharpPlus.Entities;
+using Instellate.Commands.Actions;
 using Instellate.Commands.Commands;
 
 namespace Instellate.Commands.Converters;
@@ -20,21 +21,21 @@ public class Int32Converter : IConverter<int>
         };
     }
 
-    public object ConvertFromObject(object? obj)
+    public ValueTask<object?> ConvertFromObject(object? obj, IActionContext context)
     {
         if (obj is not int)
         {
             throw new ArgumentException("Argument is not a integer", nameof(obj));
         }
 
-        return obj;
+        return ValueTask.FromResult<object?>(obj);
     }
 
-    public object ConvertFromString(Optional<string> input)
+    public ValueTask<object?> ConvertFromString(Optional<string> input, IActionContext context)
     {
         if (input.TryGetValue(out string? value))
         {
-            return int.Parse(value);
+            return ValueTask.FromResult<object?>(int.Parse(value));
         }
 
         throw new ArgumentNullException(nameof(input));

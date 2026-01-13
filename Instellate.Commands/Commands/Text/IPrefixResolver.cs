@@ -1,8 +1,8 @@
-using DSharpPlus.Entities;
+using Instellate.Commands.Actions;
 
 namespace Instellate.Commands.Commands.Text;
 
 public interface IPrefixResolver
 {
-    Task<string?> ResolvePrefixAsync(DiscordMessage message);
+    Task<string?> ResolvePrefixAsync(IActionContext context);
 }

@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using DSharpPlus.Entities;
-using Instellate.Commands.Attributes.Application;
 using Instellate.Commands.Controllers;
 
 namespace Instellate.Commands.Commands;
@@ -9,14 +8,15 @@ namespace Instellate.Commands.Commands;
 public class Command : ICommand
 {
     public string Name { get; }
-    public string? Description { get; }
+    public string Description { get; }
     public IReadOnlyList<CommandOption> Options { get; }
-    public DiscordApplicationCommandType? ApplicationCommandType { get; }
     internal MethodInfo Method { get; }
-    internal Func<BaseController, IReadOnlyList<object?>, object> ExecutionLambda { get; }
+
+    internal readonly Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>>
+        _executionLambda;
 
     internal Command(string name,
-        string? description,
+        string description,
         IReadOnlyList<CommandOption> options,
         MethodInfo method)
     {
@@ -24,8 +24,7 @@ public class Command : ICommand
         this.Description = description;
         this.Options = options;
         this.Method = method;
-        this.ApplicationCommandType = method.GetCustomAttribute<ApplicationTypeAttribute>()?.Type;
-        this.ExecutionLambda = BuildExecutionLambda(method, options);
+        this._executionLambda = BuildExecutionLambda(method, options);
     }
 
     public DiscordApplicationCommand ConstructApplicationCommand()
@@ -37,9 +36,8 @@ public class Command : ICommand
         }
 
         return new DiscordApplicationCommand(this.Name,
-            this.Description!,
-            options: options,
-            type: this.ApplicationCommandType ?? DiscordApplicationCommandType.SlashCommand);
+            this.Description,
+            options: options);
     }
 
     public DiscordApplicationCommandOption ConstructApplicationCommandOption()
@@ -52,19 +50,20 @@ public class Command : ICommand
 
         return new DiscordApplicationCommandOption(
             this.Name,
-            this.Description!,
+            this.Description,
             type: DiscordApplicationCommandOptionType.SubCommand,
             options: options);
     }
 
-    private static Func<BaseController, IReadOnlyList<object?>, object> BuildExecutionLambda(
-        MethodInfo method,
-        IReadOnlyList<CommandOption> options)
+    private static Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>>
+        BuildExecutionLambda(
+            MethodInfo method,
+            IReadOnlyList<CommandOption> options)
     {
         Type methodClass = method.DeclaringType!;
 
         ParameterExpression optionValues
-            = Expression.Parameter(typeof(IReadOnlyList<>).MakeGenericType(typeof(object)));
+            = Expression.Parameter(typeof(IReadOnlyList<object>));
         ParameterExpression controller = Expression.Parameter(typeof(BaseController));
 
         List<Expression> arguments = new(options.Count);
@@ -77,14 +76,17 @@ public class Command : ICommand
             ));
         }
 
-        BlockExpression block = Expression.Block(Expression.Call(
+        MethodCallExpression callExpression = Expression.Call(
             Expression.ConvertChecked(controller, methodClass),
             method,
             arguments
-        ));
+        );
 
-        Func<BaseController, IReadOnlyList<object?>, object> lambda =
-            Expression.Lambda<Func<BaseController, IReadOnlyList<object?>, object>>(
+        Expression block
+            = ExpressionHelper.HandleReturnValue(callExpression, method.ReturnType);
+
+        Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>> lambda =
+            Expression.Lambda<Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>>>(
                     block,
                     controller,
                     optionValues

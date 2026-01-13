@@ -1,4 +1,4 @@
-using DSharpPlus.Entities;
+using Instellate.Commands.Actions;
 
 namespace Instellate.Commands.Commands.Text;
 
@@ -11,7 +11,7 @@ public class StaticPrefixResolver : IPrefixResolver
         this._prefix = prefix;
     }
 
-    public Task<string?> ResolvePrefixAsync(DiscordMessage message)
+    public Task<string?> ResolvePrefixAsync(IActionContext context)
     {
         return Task.FromResult<string?>(this._prefix);
     }

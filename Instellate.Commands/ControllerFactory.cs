@@ -20,6 +20,7 @@ public class ControllerFactory
     private readonly ILogger<ControllerFactory> _logger;
     private readonly IServiceProvider _provider;
     private readonly Dictionary<string, ICommand> _commands = [];
+    private readonly Dictionary<string, ContextMenu> _contextMenus = [];
 
     public ControllerFactory(ILogger<ControllerFactory> logger,
         IServiceProvider provider)
@@ -40,7 +41,16 @@ public class ControllerFactory
                 continue;
             }
 
-            controllerTypes.Add(type);
+            if (!type.IsSubclassOf(typeof(BaseController)))
+            {
+                this._logger.LogWarning(
+                    "Class {ClassName} is marked with BaseController but does not derive the BaseController class. This class will not be registerd",
+                    type.Name);
+            }
+            else
+            {
+                controllerTypes.Add(type);
+            }
         }
 
         foreach (Type type in controllerTypes)
@@ -54,25 +64,20 @@ public class ControllerFactory
 
             foreach (MethodInfo method in type.GetMethods())
             {
-                CommandAttribute? command = method.GetCustomAttribute<CommandAttribute>();
-                if (command is null)
-                {
-                    continue;
-                }
+                CommandAttribute? commandAttr = method.GetCustomAttribute<CommandAttribute>();
+                ContextMenuAttribute? contextMenuAttr
+                    = method.GetCustomAttribute<ContextMenuAttribute>();
 
-                IReadOnlyList<CommandOption> options = GetOptionsForMethod(method);
-                Command commandValue = new(command.Name, command.Description, options, method);
-
-                if (group is not null)
+                if (commandAttr is not null)
                 {
-                    group._children.Add(command.Name, commandValue);
+                    AddCommand(commandAttr, group, method);
                 }
-                else
+                else if (contextMenuAttr is not null)
                 {
-                    this._commands.Add(command.Name, commandValue);
+                    ContextMenu contextMenu = new(contextMenuAttr.Name, method);
+                    this._contextMenus.Add(contextMenu.Name, contextMenu);
+                    this._logger.LogTrace("Mapped context menu {ContextMenu}", contextMenu.Name);
                 }
-
-                this._logger.LogTrace("Mapped command {}", command.Name);
             }
 
             if (group is not null)
@@ -87,10 +92,17 @@ public class ControllerFactory
 
     public Task RegisterCommandsAsync(DiscordClient client, ulong? debugGuildId)
     {
-        List<DiscordApplicationCommand> commands = new(this._commands.Count);
+        List<DiscordApplicationCommand> commands
+            = new(this._commands.Count + this._contextMenus.Count);
+
         foreach (ICommand command in this._commands.Values)
         {
             commands.Add(command.ConstructApplicationCommand());
+        }
+
+        foreach (ContextMenu contextMenu in this._contextMenus.Values)
+        {
+            commands.Add(contextMenu.ConstructApplicationCommand());
         }
 
         if (debugGuildId is { } guildId)
@@ -113,8 +125,9 @@ public class ControllerFactory
             return;
         }
 
+        MessageActionContext actionContext = new(e, client);
         IPrefixResolver resolver = scope.ServiceProvider.GetRequiredService<IPrefixResolver>();
-        string? prefix = await resolver.ResolvePrefixAsync(e.Message);
+        string? prefix = await resolver.ResolvePrefixAsync(actionContext);
         if (prefix is null)
         {
             return;
@@ -169,11 +182,6 @@ public class ControllerFactory
             return;
         }
 
-        if (executor.ApplicationCommandType is not null)
-        {
-            return;
-        }
-
         if (i < result.Commands.Count)
         {
             List<string> remainingPositional =
@@ -181,7 +189,6 @@ public class ControllerFactory
             result.PositionalArguments.InsertRange(0, remainingPositional);
         }
 
-        MessageActionContext actionContext = new(e);
         List<object?> options = new(executor.Options.Count);
         foreach (CommandOption option in executor.Options)
         {
@@ -225,7 +232,7 @@ public class ControllerFactory
             {
                 IConverter converter =
                     (IConverter)scope.ServiceProvider.GetRequiredService(option.ConverterType);
-                options.Add(converter.ConvertFromString(strOption));
+                options.Add(await converter.ConvertFromString(strOption, actionContext));
             }
             catch (Exception exception)
             {
@@ -243,7 +250,7 @@ public class ControllerFactory
             }
         }
 
-        await ExecuteControllerAsync(executor,
+        await ExecuteCommandAsync(executor,
             options,
             scope.ServiceProvider,
             actionContext,
@@ -256,9 +263,20 @@ public class ControllerFactory
     internal async Task HandleInteractionCreatedAsync(DiscordClient client,
         InteractionCreatedEventArgs e)
     {
-        using IServiceScope scope = this._provider.CreateScope();
+        if (e.Interaction.Type != DiscordInteractionType.ApplicationCommand)
+        {
+            return;
+        }
 
         DiscordInteraction interaction = e.Interaction;
+        if (interaction.Data.Type == DiscordApplicationCommandType.MessageContextMenu ||
+            interaction.Data.Type == DiscordApplicationCommandType.UserContextMenu)
+        {
+            await HandleContextMenuAsync(client, interaction);
+            return;
+        }
+
+        using IServiceScope scope = this._provider.CreateScope();
 
         string name = interaction.Data.Name;
         IReadOnlyList<DiscordInteractionDataOption> dataOptions = e.Interaction.Data.Options;
@@ -318,7 +336,7 @@ public class ControllerFactory
             return;
         }
 
-        InteractionActionContext actionContext = new(interaction);
+        InteractionActionContext actionContext = new(interaction, client);
         List<object?> options = new(executor.Options.Count);
         foreach (CommandOption option in executor.Options)
         {
@@ -347,7 +365,7 @@ public class ControllerFactory
             {
                 IConverter converter =
                     (IConverter)scope.ServiceProvider.GetRequiredService(option.ConverterType);
-                options.Add(converter.ConvertFromObject(dataOption.Value));
+                options.Add(await converter.ConvertFromObject(dataOption.Value, actionContext));
             }
             catch (Exception exception)
             {
@@ -367,7 +385,7 @@ public class ControllerFactory
 
         try
         {
-            await ExecuteControllerAsync(executor,
+            await ExecuteCommandAsync(executor,
                 options,
                 scope.ServiceProvider,
                 actionContext,
@@ -386,6 +404,31 @@ public class ControllerFactory
                 await actionResult.ExecuteResultAsync(actionContext);
             }
         }
+    }
+
+    private async Task HandleContextMenuAsync(DiscordClient client, DiscordInteraction interaction)
+    {
+        using IServiceScope scope = this._provider.CreateScope();
+
+        if (!this._contextMenus.TryGetValue(interaction.Data.Name, out ContextMenu? menu))
+        {
+            this._logger.LogWarning("Couldn't find context menu {Name}", interaction.Data.Name);
+            return;
+        }
+
+        InteractionActionContext actionContext = new(interaction, client);
+        BaseController controller = PrepareController(
+            menu._controllerType,
+            scope.ServiceProvider,
+            actionContext,
+            client,
+            interaction.User,
+            interaction.Channel,
+            interaction.Message
+        );
+
+        IActionResult actionResult = await menu._executionLambda(controller);
+        await actionResult.ExecuteResultAsync(controller.ActionContext);
     }
 
     private IReadOnlyList<CommandOption> GetOptionsForMethod(MethodInfo method)
@@ -433,8 +476,8 @@ public class ControllerFactory
         return options;
     }
 
-    private async Task ExecuteControllerAsync(Command command,
-        IReadOnlyList<object?> options,
+    private BaseController PrepareController(
+        Type type,
         IServiceProvider provider,
         IActionContext actionContext,
         DiscordClient client,
@@ -443,21 +486,54 @@ public class ControllerFactory
         DiscordMessage? message)
     {
         BaseController controller =
-            (BaseController)provider.GetRequiredService(command.Method.DeclaringType!);
+            (BaseController)provider.GetRequiredService(type);
         controller.ActionContext = actionContext;
         controller.Client = client;
         controller.Author = author;
         controller.Channel = channel;
         controller.Message = message;
 
-        object result = command.ExecutionLambda(controller, options);
-        if (result is IActionResult actionResult)
+        return controller;
+    }
+
+    private async Task ExecuteCommandAsync(
+        Command command,
+        IReadOnlyList<object?> options,
+        IServiceProvider provider,
+        IActionContext actionContext,
+        DiscordClient client,
+        DiscordUser author,
+        DiscordChannel channel,
+        DiscordMessage? message)
+    {
+        BaseController controller = PrepareController(
+            command.Method.DeclaringType!,
+            provider,
+            actionContext,
+            client,
+            author,
+            channel,
+            message
+        );
+
+        IActionResult result = await command._executionLambda(controller, options);
+        await result.ExecuteResultAsync(controller.ActionContext);
+    }
+
+    private void AddCommand(CommandAttribute command, CommandGroup? group, MethodInfo method)
+    {
+        IReadOnlyList<CommandOption> options = GetOptionsForMethod(method);
+        Command commandValue = new(command.Name, command.Description, options, method);
+
+        if (group is not null)
         {
-            await actionResult.ExecuteResultAsync(actionContext);
+            group._children.Add(command.Name, commandValue);
         }
-        else if (result is Task<IActionResult> task)
+        else
         {
-            await (await task).ExecuteResultAsync(actionContext);
+            this._commands.Add(command.Name, commandValue);
         }
+
+        this._logger.LogTrace("Mapped command {}", command.Name);
     }
 }

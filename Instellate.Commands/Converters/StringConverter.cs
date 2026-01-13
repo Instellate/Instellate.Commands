@@ -1,4 +1,5 @@
 using DSharpPlus.Entities;
+using Instellate.Commands.Actions;
 using Instellate.Commands.Commands;
 
 namespace Instellate.Commands.Converters;
@@ -17,22 +18,22 @@ public class StringConverter : IConverter<string>
             Type = this.Type
         };
     }
-    
-    public object ConvertFromObject(object? obj)
+
+    public ValueTask<object?> ConvertFromObject(object? obj, IActionContext context)
     {
         if (obj is not string)
         {
             throw new ArgumentException("Object is not string", nameof(obj));
         }
 
-        return obj;
+        return ValueTask.FromResult<object?>(obj);
     }
 
-    public object ConvertFromString(Optional<string> input)
+    public ValueTask<object?> ConvertFromString(Optional<string> input, IActionContext context)
     {
         if (input.TryGetValue(out string? value))
         {
-            return value;
+            return ValueTask.FromResult<object?>(value);
         }
 
         throw new ArgumentNullException(nameof(input));

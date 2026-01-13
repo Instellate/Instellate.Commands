@@ -1,10 +1,10 @@
 using System.Reflection;
 using DSharpPlus;
+using DSharpPlus.Entities;
 using Instellate.Commands.Attributes;
 using Instellate.Commands.Commands.Text;
 using Instellate.Commands.Converters;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Instellate.Commands;
 
@@ -29,7 +29,9 @@ public static class CommandsServiceExtensions
             collection.AddSingleton<ControllerFactory>()
                 .AddSingleton<IConverter<string>, StringConverter>()
                 .AddSingleton<IConverter<int>, Int32Converter>()
-                .AddSingleton<IConverter<bool>, BoolConverter>();
+                .AddSingleton<IConverter<bool>, BoolConverter>()
+                .AddSingleton<IConverter<DiscordUser>, UserConverter>()
+                .AddSingleton<IConverter<DiscordChannel>, ChannelConverter>();
             return collection;
         }
 

@@ -1,23 +1,27 @@
-using System.Reflection;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 namespace Instellate.Commands.Actions;
 
-internal class InteractionActionContext : IActionContext
+public sealed class InteractionActionContext : IActionContext
 {
-    private readonly DiscordInteraction _interaction;
     private int _deferred = 0;
 
-    public InteractionActionContext(DiscordInteraction interaction)
+    public DiscordInteraction Interaction { get; }
+    public DiscordClient Client { get; }
+    public DiscordUser Author => Interaction.User;
+
+    public InteractionActionContext(DiscordInteraction interaction, DiscordClient client)
     {
-        this._interaction = interaction;
+        this.Interaction = interaction;
+        this.Client = client;
     }
 
     public Task DeferAsync()
     {
         if (Interlocked.CompareExchange(ref this._deferred, 1, 0) == 0)
         {
-            return this._interaction.DeferAsync();
+            return this.Interaction.DeferAsync();
         }
         else
         {
@@ -31,13 +35,13 @@ internal class InteractionActionContext : IActionContext
         {
             DiscordFollowupMessageBuilder followupBuilder = new(builder);
             followupBuilder.AsEphemeral(ephemeral);
-            return this._interaction.CreateFollowupMessageAsync(followupBuilder);
+            return this.Interaction.CreateFollowupMessageAsync(followupBuilder);
         }
         else
         {
             DiscordInteractionResponseBuilder responseBuilder = new(builder);
             responseBuilder.AsEphemeral(ephemeral);
-            return this._interaction.CreateResponseAsync(
+            return this.Interaction.CreateResponseAsync(
                 DiscordInteractionResponseType.ChannelMessageWithSource,
                 responseBuilder);
         }
@@ -45,7 +49,7 @@ internal class InteractionActionContext : IActionContext
 
     public Task CreateModalResponseAsync(DiscordModalBuilder modal)
     {
-        return this._interaction.CreateResponseAsync(
+        return this.Interaction.CreateResponseAsync(
             DiscordInteractionResponseType.DeferredChannelMessageWithSource,
             modal);
     }

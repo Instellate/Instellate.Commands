@@ -1,23 +1,28 @@
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 
 namespace Instellate.Commands.Actions;
 
-internal sealed class MessageActionContext : IActionContext
+public sealed class MessageActionContext : IActionContext
 {
-    private readonly MessageCreatedEventArgs _messageEvent;
     private int _deferred = 0;
 
-    public MessageActionContext(MessageCreatedEventArgs messageEvent)
+    public MessageCreatedEventArgs MessageEvent { get; }
+    public DiscordClient Client { get; }
+    public DiscordUser Author => MessageEvent.Author;
+
+    public MessageActionContext(MessageCreatedEventArgs messageEvent, DiscordClient client)
     {
-        this._messageEvent = messageEvent;
+        this.MessageEvent = messageEvent;
+        this.Client = client;
     }
 
     public Task DeferAsync()
     {
         if (Interlocked.CompareExchange(ref this._deferred, 1, 0) == 0)
         {
-            return this._messageEvent.Channel.TriggerTypingAsync();
+            return this.MessageEvent.Channel.TriggerTypingAsync();
         }
 
         return Task.CompletedTask;
@@ -26,7 +31,7 @@ internal sealed class MessageActionContext : IActionContext
     public Task CreateResponseAsync(IDiscordMessageBuilder builder, bool ephemeral)
     {
         DiscordMessageBuilder messageBuilder = new(builder);
-        return this._messageEvent.Message.RespondAsync(messageBuilder);
+        return this.MessageEvent.Message.RespondAsync(messageBuilder);
     }
 
     public Task CreateModalResponseAsync(DiscordModalBuilder modal)

@@ -1,4 +1,4 @@
-using DSharpPlus.Clients;
+using DSharpPlus.Entities;
 using Instellate.Commands.Attributes;
 using Instellate.Commands.Controllers;
 
@@ -8,13 +8,6 @@ namespace Instellate.Commands.Example.Commands;
 [Command("utility", "Commands related to utility")]
 public class UtilityController : BaseController
 {
-    private readonly IShardOrchestrator _orchestrator;
-
-    public UtilityController(IShardOrchestrator orchestrator)
-    {
-        this._orchestrator = orchestrator;
-    }
-
     [Command("echo", "Echo a message")]
     public IActionResult Echo([Option("content", "The content to echo")] string content)
     {
@@ -24,26 +17,28 @@ public class UtilityController : BaseController
     [Command("ping", "Get various ping information about the bot")]
     public IActionResult Ping()
     {
-        TimeSpan latency;
-        if (this.Channel.GuildId is { } guildId)
-        {
-            latency = this._orchestrator.GetConnectionLatency(guildId);
-        }
-        else
-        {
-            latency = this._orchestrator.GetConnectionLatency(0);
-        }
+        TimeSpan latency = this.Client.GetConnectionLatency(this.Channel.GuildId ?? 0);
+        double milliLatency = Math.Round(latency.TotalMilliseconds);
 
         return Embed()
             .WithTitle("Pong!")
-            .AddField("Gateway latency", $"{Math.Round(latency.TotalMilliseconds)}ms", false);
+            .AddField("Gateway latency", $"{milliLatency}ms", false);
     }
 
-    [Command("defer", "Deferring test")]
-    public async Task<IActionResult> DeferringAsync()
+    [Command("wait", "Deferring test")]
+    public async Task<IActionResult> WaitAsync()
     {
         await DeferAsync();
-        await Task.Delay(3000);
-        return Text("Deferred!");
+        await Task.Delay(TimeSpan.FromSeconds(3));
+        return Text("Waited!");
+    }
+
+    [ContextMenu("Get User Info")]
+    public async Task<string> UserInfoAsync(DiscordUser user)
+    {
+        await DeferAsync();
+        await Task.Delay(TimeSpan.FromSeconds(1));
+
+        return $"User: {user.Username}";
     }
 }
