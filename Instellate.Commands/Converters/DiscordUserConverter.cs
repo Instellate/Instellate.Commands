@@ -5,7 +5,7 @@ using Instellate.Commands.Commands;
 
 namespace Instellate.Commands.Converters;
 
-public partial class UserConverter : IConverter<DiscordUser>
+public partial class DiscordUserConverter : IConverter<DiscordUser>
 {
     [GeneratedRegex(@"^<@!?(\d+)>$", RegexOptions.Compiled)]
     private static partial Regex UserMentionRegex();

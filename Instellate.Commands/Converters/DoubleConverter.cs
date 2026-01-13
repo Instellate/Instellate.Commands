@@ -4,9 +4,9 @@ using Instellate.Commands.Commands;
 
 namespace Instellate.Commands.Converters;
 
-public class Int32Converter : IConverter<int>
+public class DoubleConverter : IConverter<double>
 {
-    public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.Integer;
+    public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.Number;
 
     public CommandOption ConstructOption(CommandOptionMetadata metadata)
     {
@@ -23,19 +23,19 @@ public class Int32Converter : IConverter<int>
 
     public ValueTask<object?> ConvertFromObject(object? obj, IActionContext context)
     {
-        if (obj is not long val)
+        if (obj is not double val)
         {
-            throw new ArgumentException("Argument is not a long", nameof(obj));
+            throw new ArgumentException("Argument is not a double", nameof(obj));
         }
 
-        return ValueTask.FromResult<object?>((int)val);
+        return ValueTask.FromResult<object?>(val);
     }
 
     public ValueTask<object?> ConvertFromString(Optional<string> input, IActionContext context)
     {
         if (input.TryGetValue(out string? value))
         {
-            return ValueTask.FromResult<object?>(int.Parse(value));
+            return ValueTask.FromResult<object?>(double.Parse(value));
         }
 
         throw new ArgumentNullException(nameof(input));

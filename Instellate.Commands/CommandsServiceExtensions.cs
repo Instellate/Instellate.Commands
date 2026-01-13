@@ -27,12 +27,21 @@ public static class CommandsServiceExtensions
             }
 
             collection.AddSingleton<ControllerFactory>()
-                .AddSingleton<IConverter<string>, StringConverter>()
-                .AddSingleton<IConverter<int>, Int32Converter>()
-                .AddSingleton<IConverter<bool>, BoolConverter>()
-                .AddSingleton<IConverter<DiscordUser>, UserConverter>()
-                .AddSingleton<IConverter<DiscordChannel>, ChannelConverter>();
+                .AddConverter<StringConverter, string>()
+                .AddConverter<Int32Converter, int>()
+                .AddConverter<Int64Converter, long>()
+                .AddConverter<DoubleConverter, double>()
+                .AddConverter<BoolConverter, bool>()
+                .AddConverter<DiscordUserConverter, DiscordUser>()
+                .AddConverter<DiscordChannelConverter, DiscordChannel>();
+
             return collection;
+        }
+
+        internal IServiceCollection AddConverter<TConverter, TValue>()
+            where TConverter : class, IConverter<TValue>
+        {
+            return collection.AddSingleton<IConverter<TValue>, TConverter>();
         }
 
         public IServiceCollection AddStaticPrefixResolver(string prefix)

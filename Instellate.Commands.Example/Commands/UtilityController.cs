@@ -33,6 +33,12 @@ public class UtilityController : BaseController
         return Text("Waited!");
     }
 
+    [Command("number", "Number test")]
+    public string NumberTest([Option("num", "A integer")] int num)
+    {
+        return $"Integer provided: {num}";
+    }
+
     [ContextMenu("Get User Info")]
     public async Task<string> UserInfoAsync(DiscordUser user)
     {

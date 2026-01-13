@@ -236,6 +236,8 @@ public class ControllerFactory
             }
             catch (Exception exception)
             {
+                this._logger.LogError(exception, "Got error when trying to convert value");
+
                 IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
                 if (errorHandler is not null)
                 {
@@ -250,14 +252,29 @@ public class ControllerFactory
             }
         }
 
-        await ExecuteCommandAsync(executor,
-            options,
-            scope.ServiceProvider,
-            actionContext,
-            client,
-            e.Author,
-            e.Channel,
-            e.Message);
+        try
+        {
+            await ExecuteCommandAsync(executor,
+                options,
+                scope.ServiceProvider,
+                actionContext,
+                client,
+                e.Author,
+                e.Channel,
+                e.Message);
+        }
+        catch (Exception exception)
+        {
+            this._logger.LogError(exception, "Got error when trying to execute command");
+
+            IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
+            if (errorHandler is not null)
+            {
+                IActionResult actionResult =
+                    await errorHandler.HandleCommandError(executor, exception);
+                await actionResult.ExecuteResultAsync(actionContext);
+            }
+        }
     }
 
     internal async Task HandleInteractionCreatedAsync(DiscordClient client,
@@ -369,6 +386,8 @@ public class ControllerFactory
             }
             catch (Exception exception)
             {
+                this._logger.LogError(exception, "Got error when trying to convert value");
+
                 IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
                 if (errorHandler is not null)
                 {
@@ -396,6 +415,8 @@ public class ControllerFactory
         }
         catch (Exception exception)
         {
+            this._logger.LogError(exception, "Got error when trying to execute command");
+
             IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
             if (errorHandler is not null)
             {

@@ -5,7 +5,7 @@ using Instellate.Commands.Commands;
 
 namespace Instellate.Commands.Converters;
 
-public partial class ChannelConverter : IConverter<DiscordChannel>
+public partial class DiscordChannelConverter : IConverter<DiscordChannel>
 {
     [GeneratedRegex(@"^<#!?(\d+)>$", RegexOptions.Compiled)]
     private static partial Regex ChannelMentionRegex();
