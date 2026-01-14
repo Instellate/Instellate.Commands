@@ -10,14 +10,11 @@ namespace Instellate.Commands;
 
 public static class CommandsServiceExtensions
 {
-    public static IServiceProvider MapCommandControllers(this IServiceProvider provider)
+    public static DiscordClient MapCommandControllers(this DiscordClient client)
     {
-        using IServiceScope scope = provider.CreateScope();
-
-        ControllerFactory factory = scope.ServiceProvider.GetRequiredService<ControllerFactory>();
+        ControllerFactory factory = client.ServiceProvider.GetRequiredService<ControllerFactory>();
         factory.MapControllers(Assembly.GetCallingAssembly());
-
-        return provider;
+        return client;
     }
 
     public static Task RegisterApplicationCommands(
@@ -36,46 +33,49 @@ public static class CommandsServiceExtensions
             .HandleInteractionCreated(CommandEventsHandler.HandleInteractionCreatedAsync);
     }
 
-    extension(IServiceCollection collection)
+    public static IServiceCollection AddCommands(this IServiceCollection collection)
     {
-        public IServiceCollection AddCommands()
+        Assembly assembly = Assembly.GetCallingAssembly();
+
+        foreach (Type type in assembly.GetExportedTypes())
         {
-            Assembly assembly = Assembly.GetCallingAssembly();
-
-            foreach (Type type in assembly.GetExportedTypes())
+            if (type.GetCustomAttribute<BaseControllerAttribute>() is null)
             {
-                if (type.GetCustomAttribute<BaseControllerAttribute>() is null)
-                {
-                    continue;
-                }
-
-                collection.AddScoped(type);
+                continue;
             }
 
-            collection.AddSingleton<ControllerFactory>()
-                .AddConverter<StringConverter, string>()
-                .AddConverter<Int32Converter, int>()
-                .AddConverter<Int64Converter, long>()
-                .AddConverter<DoubleConverter, double>()
-                .AddConverter<BoolConverter, bool>()
-                .AddConverter<DiscordUserConverter, DiscordUser>()
-                .AddConverter<DiscordChannelConverter, DiscordChannel>();
-
-            return collection;
+            collection.AddScoped(type);
         }
 
-        internal IServiceCollection AddConverter<TConverter, TValue>()
-            where TConverter : class, IConverter<TValue>
-        {
-            return collection.AddSingleton<IConverter<TValue>, TConverter>();
-        }
+        collection
+            .AddSingleton<ControllerFactory>()
+            .AddConverter<StringConverter, string>()
+            .AddConverter<Int32Converter, int>()
+            .AddConverter<Int64Converter, long>()
+            .AddConverter<DoubleConverter, double>()
+            .AddConverter<BoolConverter, bool>()
+            .AddConverter<DiscordUserConverter, DiscordUser>()
+            .AddConverter<DiscordChannelConverter, DiscordChannel>();
 
-        public IServiceCollection AddStaticPrefixResolver(string prefix)
-        {
-            collection.AddSingleton<IPrefixResolver, StaticPrefixResolver>(_ =>
-                new StaticPrefixResolver(prefix)
-            );
-            return collection;
-        }
+        return collection;
+    }
+
+    internal static IServiceCollection AddConverter<TConverter, TValue>(
+        this IServiceCollection collection
+    )
+        where TConverter : class, IConverter<TValue>
+    {
+        return collection.AddSingleton<IConverter<TValue>, TConverter>();
+    }
+
+    public static IServiceCollection AddStaticPrefixResolver(
+        this IServiceCollection collection,
+        string prefix
+    )
+    {
+        collection.AddSingleton<IPrefixResolver, StaticPrefixResolver>(_ =>
+            new StaticPrefixResolver(prefix)
+        );
+        return collection;
     }
 }

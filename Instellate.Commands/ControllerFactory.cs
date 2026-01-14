@@ -65,7 +65,11 @@ public class ControllerFactory
             CommandGroup? group = null;
             if (groupAttr is not null)
             {
-                group = new CommandGroup(groupAttr.Name, groupAttr.Description);
+                group = new CommandGroup(
+                    groupAttr.Name,
+                    groupAttr.Description,
+                    type.GetCustomAttribute<RequirePermissionsAttribute>()?.Permissions
+                );
             }
 
             foreach (MethodInfo method in type.GetMethods())
@@ -163,6 +167,22 @@ public class ControllerFactory
 
             if (command is CommandGroup group)
             {
+                if (group.RequirePermissions is not null &&
+                    !await MemberHasPermissionAsync(e, group.RequirePermissions.Value))
+                {
+                    if (errorHandler is not null)
+                    {
+                        IActionResult actionResult
+                            = await errorHandler.HandleAuthorMissingPermissionsAsync(
+                                command,
+                                group.RequirePermissions.Value
+                            );
+                        await actionResult.ExecuteResultAsync(actionContext);
+                    }
+
+                    return;
+                }
+
                 if (group.Children.TryGetValue(commandName, out ICommand? nextCommand))
                 {
                     command = nextCommand;
@@ -194,6 +214,20 @@ public class ControllerFactory
         if (command is not Command executor)
         {
             return;
+        }
+
+        if (executor.RequirePermissions is not null &&
+            !await MemberHasPermissionAsync(e, executor.RequirePermissions.Value))
+        {
+            if (errorHandler is not null)
+            {
+                IActionResult actionResult
+                    = await errorHandler.HandleAuthorMissingPermissionsAsync(
+                        command,
+                        executor.RequirePermissions.Value
+                    );
+                await actionResult.ExecuteResultAsync(actionContext);
+            }
         }
 
         if (i < result.Commands.Count)
@@ -253,7 +287,7 @@ public class ControllerFactory
                 this._logger.LogError(exception, "Got error when trying to convert value");
                 if (errorHandler is not null)
                 {
-                    IActionResult actionResult = await errorHandler.HandleConverterError(
+                    IActionResult actionResult = await errorHandler.HandleConverterErrorAsync(
                         executor,
                         option,
                         strOption,
@@ -285,7 +319,7 @@ public class ControllerFactory
             if (errorHandler is not null)
             {
                 IActionResult actionResult =
-                    await errorHandler.HandleCommandError(executor, exception);
+                    await errorHandler.HandleCommandErrorAsync(executor, exception);
                 await actionResult.ExecuteResultAsync(actionContext);
             }
         }
@@ -403,7 +437,7 @@ public class ControllerFactory
                 {
                     CommandsException exception = new($"Option {option.Name} not found");
                     IActionResult actionResult
-                        = await errorHandler.HandleCommandError(executor, exception);
+                        = await errorHandler.HandleCommandErrorAsync(executor, exception);
                     await actionResult.ExecuteResultAsync(actionContext);
                 }
 
@@ -421,7 +455,7 @@ public class ControllerFactory
                 this._logger.LogError(exception, "Got error when trying to convert value");
                 if (errorHandler is not null)
                 {
-                    IActionResult actionResult = await errorHandler.HandleConverterError(
+                    IActionResult actionResult = await errorHandler.HandleConverterErrorAsync(
                         executor,
                         option,
                         dataOption.Value,
@@ -453,7 +487,7 @@ public class ControllerFactory
             if (errorHandler is not null)
             {
                 IActionResult actionResult =
-                    await errorHandler.HandleCommandError(executor, exception);
+                    await errorHandler.HandleCommandErrorAsync(executor, exception);
                 await actionResult.ExecuteResultAsync(actionContext);
             }
         }
@@ -582,7 +616,13 @@ public class ControllerFactory
     private void AddCommand(CommandAttribute command, CommandGroup? group, MethodInfo method)
     {
         IReadOnlyList<CommandOption> options = GetOptionsForMethod(method);
-        Command commandValue = new(command.Name, command.Description, options, method);
+        Command commandValue = new(
+            command.Name,
+            command.Description,
+            options,
+            method.GetCustomAttribute<RequirePermissionsAttribute>()?.Permissions,
+            method
+        );
 
         if (group is not null)
         {
@@ -594,5 +634,20 @@ public class ControllerFactory
         }
 
         this._logger.LogTrace("Mapped command {}", command.Name);
+    }
+
+    private async Task<bool> MemberHasPermissionAsync(
+        MessageCreatedEventArgs e,
+        DiscordPermissions requiredPermissions
+    )
+    {
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (e.Guild is null)
+        {
+            return true;
+        }
+
+        DiscordMember member = await e.Guild.GetMemberAsync(e.Author.Id);
+        return member.Permissions.HasAllPermissions(requiredPermissions);
     }
 }

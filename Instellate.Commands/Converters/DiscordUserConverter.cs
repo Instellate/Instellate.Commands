@@ -65,10 +65,10 @@ public partial class DiscordUserConverter : IConverter<DiscordUser>
         throw new ArgumentException("Input does not follow user format", nameof(input));
     }
 
-    [GeneratedRegex(@"^<@!?(\d+)>$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^<@!?(\d+)>$")]
     private static partial Regex UserMentionRegex();
 
     // ReSharper disable once UnusedMember.Local Might have use late
-    [GeneratedRegex(@"^(?:[a-z]|\.[a-z_])+\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?:[a-z]|\.[a-z_])+\.?$", RegexOptions.IgnoreCase)]
     private static partial Regex UsernameRegex();
 }

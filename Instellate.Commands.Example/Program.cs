@@ -31,7 +31,7 @@ public static class Program
             );
 
         DiscordClient client = builder.Build();
-        client.ServiceProvider.MapCommandControllers();
+        client.MapCommandControllers();
         await client.ConnectAsync();
 
         client.Logger.LogInformation("Registering application commands");

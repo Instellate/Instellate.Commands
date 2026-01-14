@@ -4,15 +4,15 @@ namespace Instellate.Commands.ArgumentParser;
 
 internal static partial class Regexes
 {
-    [GeneratedRegex(@"^--([\w-]+)", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^--([\w-]+)")]
     public static partial Regex Argument();
 
-    [GeneratedRegex(@"^-([\w-]+)", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^-([\w-]+)")]
     public static partial Regex ShortArgument();
 
-    [GeneratedRegex("""^("(?:[^\\"]|\\["])*"|[^ ]*)""", RegexOptions.Compiled)]
+    [GeneratedRegex("""^("(?:[^\\"]|\\["])*"|[^ ]*)""")]
     public static partial Regex Value();
 
-    [GeneratedRegex(@"^([a-zA-Z0-9_][\w-]*)", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^([a-zA-Z0-9_][\w-]*)")]
     public static partial Regex Command();
 }

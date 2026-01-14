@@ -13,18 +13,21 @@ public class Command : ICommand
     public string Name { get; }
     public string Description { get; }
     public IReadOnlyList<CommandOption> Options { get; }
+    public DiscordPermissions? RequirePermissions { get; }
     internal MethodInfo Method { get; }
 
     internal Command(
         string name,
         string description,
         IReadOnlyList<CommandOption> options,
+        DiscordPermissions? requirePermissions,
         MethodInfo method
     )
     {
         this.Name = name;
         this.Description = description;
         this.Options = options;
+        this.RequirePermissions = requirePermissions;
         this.Method = method;
         this._executionLambda = BuildExecutionLambda(method, options);
     }
@@ -41,7 +44,8 @@ public class Command : ICommand
         return new DiscordApplicationCommand(
             this.Name,
             this.Description,
-            options
+            options,
+            defaultMemberPermissions: this.RequirePermissions
         );
     }
 

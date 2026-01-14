@@ -65,6 +65,6 @@ public partial class DiscordChannelConverter : IConverter<DiscordChannel>
         throw new ArgumentException("Input does not follow channel format", nameof(input));
     }
 
-    [GeneratedRegex(@"^<#!?(\d+)>$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^<#!?(\d+)>$")]
     private static partial Regex ChannelMentionRegex();
 }

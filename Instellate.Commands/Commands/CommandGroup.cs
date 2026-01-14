@@ -8,12 +8,14 @@ public class CommandGroup : ICommand
 
     public string Name { get; }
     public string Description { get; }
+    public DiscordPermissions? RequirePermissions { get; }
     public IReadOnlyDictionary<string, ICommand> Children => this._children;
 
-    internal CommandGroup(string name, string description)
+    internal CommandGroup(string name, string description, DiscordPermissions? requirePermissions)
     {
         this.Name = name;
         this.Description = description;
+        this.RequirePermissions = requirePermissions;
     }
 
     public DiscordApplicationCommand ConstructApplicationCommand()

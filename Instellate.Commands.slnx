@@ -1,0 +1,4 @@
+<Solution>
+    <Project Path="Instellate.Commands/Instellate.Commands.csproj"/>
+    <Project Path="Instellate.Commands.Example/Instellate.Commands.Example.csproj"/>
+</Solution>

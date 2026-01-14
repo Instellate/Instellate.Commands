@@ -1,0 +1,5 @@
+apiRules:
+  - exclude:
+      uidRegex: ^Instellate\.Commands\.Example.*$
+  - exclude:
+      uidRegex: ^System\..*$
