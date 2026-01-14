@@ -24,17 +24,16 @@ jobs:
 
       - name: Build Project
         run: dotnet build
-  
-  #      - name: Get Nightly Version
-  #        id: nightly
-  #        run: printf "version=%0*d" 5 $(( ${{ github.run_number }} )) >> "$GITHUB_OUTPUT"
-  #      
-  #      - name: Package Proejct
-  #        run: |
-  #          dotnet pack -c Release -o build -p:Nightly=${{ steps.nightly.outputs.version }}
-  #          dotnet nuget push "build/*" --skip-duplicate -k ${{ secrets.NUGET_ORG_API_KEY }} -s https://api.nuget.org/v3/index.json
-  
-  
+
+      - name: Get Nightly Version
+        id: nightly
+        run: printf "version=%0*d" 5 $(( ${{ github.run_number }} - 3 )) >> "$GITHUB_OUTPUT"
+
+      - name: Package Proejct
+        run: |
+          dotnet pack -c Release -o build -p:Nightly=${{ steps.nightly.outputs.version }}
+          dotnet nuget push "build/*" --skip-duplicate -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+
   generate-documentation:
     name: Generate Documentation
     runs-on: ubuntu-latest
@@ -43,11 +42,11 @@ jobs:
       pages: write
       id-token: write
       contents: read
-    
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
+
     steps:
       - uses: actions/checkout@v4
 
