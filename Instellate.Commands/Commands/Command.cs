@@ -15,7 +15,6 @@ public class Command : ICommand
     public IReadOnlyList<CommandOption> Options { get; }
     internal MethodInfo Method { get; }
 
-
     internal Command(
         string name,
         string description,
