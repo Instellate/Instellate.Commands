@@ -2,8 +2,8 @@ using System.Reflection;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Instellate.Commands.Attributes;
-using Instellate.Commands.Commands.Text;
 using Instellate.Commands.Converters;
+using Instellate.Commands.Text;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Instellate.Commands;

@@ -7,9 +7,8 @@ using Instellate.Commands.ArgumentParser;
 using Instellate.Commands.Attributes;
 using Instellate.Commands.Attributes.Text;
 using Instellate.Commands.Commands;
-using Instellate.Commands.Commands.Text;
-using Instellate.Commands.Controllers;
 using Instellate.Commands.Converters;
+using Instellate.Commands.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

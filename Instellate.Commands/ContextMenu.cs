@@ -3,7 +3,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using DSharpPlus.Entities;
 using Instellate.Commands.Actions;
-using Instellate.Commands.Controllers;
 
 namespace Instellate.Commands;
 

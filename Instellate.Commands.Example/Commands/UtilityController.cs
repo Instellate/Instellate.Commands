@@ -1,6 +1,5 @@
 using DSharpPlus.Entities;
 using Instellate.Commands.Attributes;
-using Instellate.Commands.Controllers;
 
 namespace Instellate.Commands.Example.Commands;
 

@@ -2,7 +2,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using Instellate.Commands.Actions;
 
-namespace Instellate.Commands.Controllers;
+namespace Instellate.Commands;
 
 public abstract class BaseController
 {
