@@ -15,6 +15,7 @@ public class CommandOption
     // These should always be set
     public Type ConverterType { get; internal set; } = null!;
     public Type ParameterType { get; internal set; } = null!;
+    public object? DefaultValue { get; internal set; } = null!;
 
     public CommandOption(string name, string description, bool optional, int? positional)
     {

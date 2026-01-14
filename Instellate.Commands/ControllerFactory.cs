@@ -246,7 +246,7 @@ public class ControllerFactory
                 {
                     if (option.Optional)
                     {
-                        options.Add(null);
+                        options.Add(option.DefaultValue);
                         continue;
                     }
 
@@ -267,7 +267,7 @@ public class ControllerFactory
                 {
                     if (option.Optional)
                     {
-                        options.Add(null);
+                        options.Add(option.DefaultValue);
                         continue;
                     }
 
@@ -423,7 +423,7 @@ public class ControllerFactory
             {
                 if (option.Optional)
                 {
-                    options.Add(null);
+                    options.Add(option.DefaultValue);
                     continue;
                 }
 
@@ -560,6 +560,7 @@ public class ControllerFactory
             CommandOption commandOption = converter.ConstructOption(metadata);
             commandOption.ConverterType = converterType;
             commandOption.ParameterType = parameter.ParameterType;
+            commandOption.DefaultValue = parameter.DefaultValue;
             options.Add(commandOption);
         }
 
