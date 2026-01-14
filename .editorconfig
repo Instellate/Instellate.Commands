@@ -58,3 +58,4 @@ csharp_wrap_arguments_style = chop_if_long
 csharp_style_prefer_primary_constructors = false
 resharper_convert_to_primary_constructor_highlighting = none
 resharper_loop_can_be_converted_to_query_highlighting = none
+dotnet_diagnostic.CS1591.severity = suggestion

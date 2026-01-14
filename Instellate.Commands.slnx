@@ -1,4 +1,14 @@
 <Solution>
+    <Folder Name="/Build Items/">
+        <File Path="Directory.Build.props"/>
+    </Folder>
+
+    <Folder Name="/Solution Items/">
+        <File Path=".editorconfig"/>
+        <File Path="LICENSE"/>
+        <File Path="README.md"/>
+    </Folder>
+
     <Project Path="Instellate.Commands/Instellate.Commands.csproj"/>
     <Project Path="Instellate.Commands.Example/Instellate.Commands.Example.csproj"/>
 </Solution>
