@@ -9,10 +9,11 @@ namespace Instellate.Commands;
 
 public class ContextMenu
 {
+    internal readonly Type _controllerType;
+    internal readonly Func<BaseController, Task<IActionResult>> _executionLambda;
+
     public string Name { get; }
     public DiscordApplicationCommandType Type { get; }
-    internal readonly Func<BaseController, Task<IActionResult>> _executionLambda;
-    internal readonly Type _controllerType;
 
     public ContextMenu(string name, MethodInfo method)
     {
@@ -34,7 +35,8 @@ public class ContextMenu
         {
             throw new ArgumentException(
                 $"Method {method.Name} is required to have only a single parameter to be a context menu",
-                nameof(method));
+                nameof(method)
+            );
         }
 
         ParameterInfo parameter = parameters[0];
@@ -43,15 +45,15 @@ public class ContextMenu
         {
             return DiscordApplicationCommandType.UserContextMenu;
         }
-        else if (parameter.ParameterType == typeof(DiscordMessage))
+
+        if (parameter.ParameterType == typeof(DiscordMessage))
         {
             return DiscordApplicationCommandType.MessageContextMenu;
         }
-        else
-        {
-            throw new ArgumentException(
-                $"Parameter {parameter.Name} of method {method.Name} has unsupported context menu value");
-        }
+
+        throw new ArgumentException(
+            $"Parameter {parameter.Name} of method {method.Name} has unsupported context menu value"
+        );
     }
 
     private static Func<BaseController, Task<IActionResult>> BuildExecutionLambda(
@@ -64,7 +66,8 @@ public class ContextMenu
         {
             throw new ArgumentException(
                 $"Method {method.Name} is required to have only a single parameter",
-                nameof(method));
+                nameof(method)
+            );
         }
 
         ParameterExpression baseController = Expression.Parameter(typeof(BaseController));
@@ -87,21 +90,26 @@ public class ContextMenu
         MethodInfo genericFirst = typeof(Enumerable)
             .GetMethods()
             .First(m =>
-                m.Name == nameof(Enumerable.First) && m.GetParameters().Length == 1);
+                m.Name == nameof(Enumerable.First) && m.GetParameters().Length == 1
+            );
 
         MethodInfo first;
         MemberExpression dictionary;
         switch (commandType)
         {
             case DiscordApplicationCommandType.UserContextMenu:
-                dictionary = Expression.Property(resolvedData,
-                    nameof(DiscordInteractionResolvedCollection.Users));
+                dictionary = Expression.Property(
+                    resolvedData,
+                    nameof(DiscordInteractionResolvedCollection.Users)
+                );
                 first = genericFirst.MakeGenericMethod(typeof(DiscordUser));
                 break;
 
             case DiscordApplicationCommandType.MessageContextMenu:
-                dictionary = Expression.Property(resolvedData,
-                    nameof(DiscordInteractionResolvedCollection.Messages));
+                dictionary = Expression.Property(
+                    resolvedData,
+                    nameof(DiscordInteractionResolvedCollection.Messages)
+                );
                 first = genericFirst.MakeGenericMethod(typeof(DiscordMessage));
                 break;
 

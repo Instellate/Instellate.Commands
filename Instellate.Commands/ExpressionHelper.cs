@@ -45,12 +45,14 @@ internal static class ExpressionHelper
 
             if (innerReturnType.GetInterfaces().Contains(typeof(IActionResult)))
             {
-                return Expression.Block(Expression.Call(
-                    null,
-                    typeof(ExpressionHelper).GetMethod(nameof(AwaitTaskAsync))!,
-                    Expression.Convert(returnValue, typeof(Task)),
-                    Expression.Lambda<Func<Task, IActionContext>>(Expression.Block(value), task)
-                ));
+                return Expression.Block(
+                    Expression.Call(
+                        null,
+                        typeof(ExpressionHelper).GetMethod(nameof(AwaitTaskAsync))!,
+                        Expression.Convert(returnValue, typeof(Task)),
+                        Expression.Lambda<Func<Task, IActionContext>>(Expression.Block(value), task)
+                    )
+                );
             }
 
             MethodCallExpression toString = Expression.Call(
@@ -69,12 +71,14 @@ internal static class ExpressionHelper
                 task
             );
 
-            return Expression.Block(Expression.Call(
-                null,
-                typeof(ExpressionHelper).GetMethod(nameof(AwaitTaskAsync))!,
-                Expression.Convert(returnValue, typeof(Task)),
-                lambda
-            ));
+            return Expression.Block(
+                Expression.Call(
+                    null,
+                    typeof(ExpressionHelper).GetMethod(nameof(AwaitTaskAsync))!,
+                    Expression.Convert(returnValue, typeof(Task)),
+                    lambda
+                )
+            );
         }
         else
         {
@@ -93,8 +97,10 @@ internal static class ExpressionHelper
         }
     }
 
-    public static async Task<IActionResult> AwaitTaskAsync(Task task,
-        Func<Task, IActionResult> lambda)
+    public static async Task<IActionResult> AwaitTaskAsync(
+        Task task,
+        Func<Task, IActionResult> lambda
+    )
     {
         await task;
         return lambda(task);

@@ -7,18 +7,21 @@ namespace Instellate.Commands.Commands;
 
 public class Command : ICommand
 {
+    internal readonly Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>>
+        _executionLambda;
+
     public string Name { get; }
     public string Description { get; }
     public IReadOnlyList<CommandOption> Options { get; }
     internal MethodInfo Method { get; }
 
-    internal readonly Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>>
-        _executionLambda;
 
-    internal Command(string name,
+    internal Command(
+        string name,
         string description,
         IReadOnlyList<CommandOption> options,
-        MethodInfo method)
+        MethodInfo method
+    )
     {
         this.Name = name;
         this.Description = description;
@@ -26,6 +29,7 @@ public class Command : ICommand
         this.Method = method;
         this._executionLambda = BuildExecutionLambda(method, options);
     }
+
 
     public DiscordApplicationCommand ConstructApplicationCommand()
     {
@@ -35,9 +39,11 @@ public class Command : ICommand
             options.Add(option.ConstructEntity());
         }
 
-        return new DiscordApplicationCommand(this.Name,
+        return new DiscordApplicationCommand(
+            this.Name,
             this.Description,
-            options: options);
+            options
+        );
     }
 
     public DiscordApplicationCommandOption ConstructApplicationCommandOption()
@@ -51,14 +57,16 @@ public class Command : ICommand
         return new DiscordApplicationCommandOption(
             this.Name,
             this.Description,
-            type: DiscordApplicationCommandOptionType.SubCommand,
-            options: options);
+            DiscordApplicationCommandOptionType.SubCommand,
+            options: options
+        );
     }
 
     private static Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>>
         BuildExecutionLambda(
             MethodInfo method,
-            IReadOnlyList<CommandOption> options)
+            IReadOnlyList<CommandOption> options
+        )
     {
         Type methodClass = method.DeclaringType!;
 
@@ -70,10 +78,12 @@ public class Command : ICommand
         for (int i = 0; i < options.Count; i++)
         {
             CommandOption option = options[i];
-            arguments.Add(Expression.ConvertChecked(
-                Expression.Property(optionValues, "Item", Expression.Constant(i)),
-                option.ParameterType
-            ));
+            arguments.Add(
+                Expression.ConvertChecked(
+                    Expression.Property(optionValues, "Item", Expression.Constant(i)),
+                    option.ParameterType
+                )
+            );
         }
 
         MethodCallExpression callExpression = Expression.Call(

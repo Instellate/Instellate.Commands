@@ -13,18 +13,6 @@ public static class Parser
         (Token.Value, Regexes.Value())
     ];
 
-    private enum Token
-    {
-        Argument,
-        Value,
-    }
-
-    public record Result(
-        List<string> Commands,
-        Dictionary<string, string?> Options,
-        List<string> PositionalArguments
-    );
-
     public static Result Parse(string input)
     {
         Dictionary<string, string?> options = new();
@@ -92,4 +80,16 @@ public static class Parser
 
         return new Result(commands, options, arguments);
     }
+
+    private enum Token
+    {
+        Argument,
+        Value
+    }
+
+    public record Result(
+        List<string> Commands,
+        Dictionary<string, string?> Options,
+        List<string> PositionalArguments
+    );
 }

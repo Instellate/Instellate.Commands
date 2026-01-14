@@ -24,7 +24,7 @@ public class CommandGroup : ICommand
             children.Add(child.ConstructApplicationCommandOption());
         }
 
-        return new DiscordApplicationCommand(this.Name, this.Description, options: children);
+        return new DiscordApplicationCommand(this.Name, this.Description, children);
     }
 
     public DiscordApplicationCommandOption ConstructApplicationCommandOption()
@@ -35,9 +35,11 @@ public class CommandGroup : ICommand
             children.Add(child.ConstructApplicationCommandOption());
         }
 
-        return new DiscordApplicationCommandOption(this.Name,
+        return new DiscordApplicationCommandOption(
+            this.Name,
             this.Description,
             DiscordApplicationCommandOptionType.SubCommand,
-            options: children);
+            options: children
+        );
     }
 }

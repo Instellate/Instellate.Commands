@@ -9,18 +9,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Instellate.Commands\Instellate.Commands.csproj" />
+        <ProjectReference Include="..\Instellate.Commands\Instellate.Commands.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02566" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.1" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1" />
+        <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02566"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <None Update="appsettings.json" >
+        <None Update="appsettings.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

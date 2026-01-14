@@ -35,10 +35,18 @@ dotnet_naming_rule.private_fields_must_begin_with_underscore_and_be_in_camel_cas
 dotnet_naming_rule.private_fields_must_begin_with_underscore_and_be_in_camel_case.style = require_underscore_prefix_and_camel_case
 dotnet_naming_rule.private_fields_must_begin_with_underscore_and_be_in_camel_case.severity = warning
 
-
 # Prefer this. for fields and properties
 dotnet_style_qualification_for_field = true:warning
 dotnet_style_qualification_for_property = true:warning
+
+# ReSharper method signature and invocation style
+csharp_wrap_parameters_style = chop_if_long
+csharp_wrap_after_declaration_lpar = true
+csharp_wrap_before_declaration_rpar = true
+
+csharp_wrap_arguments_style = chop_if_long
+csharp_wrap_after_invocation_lpar = true
+csharp_wrap_before_invocation_rpar = true
 
 # Various
 csharp_prefer_braces = true:error

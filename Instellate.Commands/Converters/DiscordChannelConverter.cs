@@ -7,17 +7,16 @@ namespace Instellate.Commands.Converters;
 
 public partial class DiscordChannelConverter : IConverter<DiscordChannel>
 {
-    [GeneratedRegex(@"^<#!?(\d+)>$", RegexOptions.Compiled)]
-    private static partial Regex ChannelMentionRegex();
-
     public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.Channel;
 
     public CommandOption ConstructOption(CommandOptionMetadata metadata)
     {
-        return new CommandOption(metadata.Name,
+        return new CommandOption(
+            metadata.Name,
             metadata.Description,
             metadata.Optional,
-            metadata.Positional)
+            metadata.Positional
+        )
         {
             Type = this.Type
         };
@@ -40,8 +39,10 @@ public partial class DiscordChannelConverter : IConverter<DiscordChannel>
         return await context.Client.GetChannelAsync(channelId);
     }
 
-    public async ValueTask<object?> ConvertFromString(Optional<string> input,
-        IActionContext context)
+    public async ValueTask<object?> ConvertFromString(
+        Optional<string> input,
+        IActionContext context
+    )
     {
         if (!input.TryGetValue(out string? value))
         {
@@ -60,9 +61,10 @@ public partial class DiscordChannelConverter : IConverter<DiscordChannel>
             channelId = ulong.Parse(match.Groups[1].Value);
             return await context.Client.GetChannelAsync(channelId);
         }
-        else
-        {
-            throw new ArgumentException("Input does not follow channel format", nameof(input));
-        }
+
+        throw new ArgumentException("Input does not follow channel format", nameof(input));
     }
+
+    [GeneratedRegex(@"^<#!?(\d+)>$", RegexOptions.Compiled)]
+    private static partial Regex ChannelMentionRegex();
 }

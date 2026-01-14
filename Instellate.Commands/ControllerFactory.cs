@@ -17,10 +17,10 @@ namespace Instellate.Commands;
 
 public class ControllerFactory
 {
-    private readonly ILogger<ControllerFactory> _logger;
-    private readonly IServiceProvider _provider;
     private readonly Dictionary<string, ICommand> _commands = [];
     private readonly Dictionary<string, ContextMenu> _contextMenus = [];
+    private readonly ILogger<ControllerFactory> _logger;
+    private readonly IServiceProvider _provider;
 
     public IReadOnlyDictionary<string, ICommand> Commands => this._commands;
     public IReadOnlyDictionary<string, ContextMenu> ContextMenus => this._contextMenus;
@@ -115,10 +115,8 @@ public class ControllerFactory
         {
             return client.BulkOverwriteGuildApplicationCommandsAsync(guildId, commands);
         }
-        else
-        {
-            return client.BulkOverwriteGlobalApplicationCommandsAsync(commands);
-        }
+
+        return client.BulkOverwriteGlobalApplicationCommandsAsync(commands);
     }
 
     internal async Task HandleMessageCreatedAsync(DiscordClient client, MessageCreatedEventArgs e)

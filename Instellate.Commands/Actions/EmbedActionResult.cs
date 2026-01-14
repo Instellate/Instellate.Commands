@@ -16,6 +16,13 @@ public sealed class EmbedActionResult : IActionResult
         this._builder = builder;
     }
 
+    public Task ExecuteResultAsync(IActionContext context)
+    {
+        DiscordMessageBuilder builder = new();
+        builder.AddEmbed(this._builder.Build());
+        return context.CreateResponseAsync(builder);
+    }
+
     public EmbedActionResult AddField(string name, string value, bool inline)
     {
         this._builder.AddField(name, value, inline);
@@ -122,12 +129,5 @@ public sealed class EmbedActionResult : IActionResult
     {
         this._builder.WithUrl(uri);
         return this;
-    }
-
-    public Task ExecuteResultAsync(IActionContext context)
-    {
-        DiscordMessageBuilder builder = new();
-        builder.AddEmbed(this._builder.Build());
-        return context.CreateResponseAsync(builder);
     }
 }

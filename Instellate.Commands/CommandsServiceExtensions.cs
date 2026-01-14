@@ -10,6 +10,32 @@ namespace Instellate.Commands;
 
 public static class CommandsServiceExtensions
 {
+    public static IServiceProvider MapCommandControllers(this IServiceProvider provider)
+    {
+        using IServiceScope scope = provider.CreateScope();
+
+        ControllerFactory factory = scope.ServiceProvider.GetRequiredService<ControllerFactory>();
+        factory.MapControllers(Assembly.GetCallingAssembly());
+
+        return provider;
+    }
+
+    public static Task RegisterApplicationCommands(
+        this DiscordClient client,
+        ulong? debugGuildId = null
+    )
+    {
+        ControllerFactory factory = client.ServiceProvider.GetRequiredService<ControllerFactory>();
+        return factory.RegisterCommandsAsync(client, debugGuildId);
+    }
+
+    public static EventHandlingBuilder HandleCommandEvents(this EventHandlingBuilder builder)
+    {
+        return builder
+            .HandleMessageCreated(CommandEventsHandler.HandleMessageCreatedAsync)
+            .HandleInteractionCreated(CommandEventsHandler.HandleInteractionCreatedAsync);
+    }
+
     extension(IServiceCollection collection)
     {
         public IServiceCollection AddCommands()
@@ -46,33 +72,10 @@ public static class CommandsServiceExtensions
 
         public IServiceCollection AddStaticPrefixResolver(string prefix)
         {
-            collection.AddSingleton<IPrefixResolver, StaticPrefixResolver>((_) =>
-                new StaticPrefixResolver(prefix));
+            collection.AddSingleton<IPrefixResolver, StaticPrefixResolver>(_ =>
+                new StaticPrefixResolver(prefix)
+            );
             return collection;
         }
-    }
-
-    public static IServiceProvider MapCommandControllers(this IServiceProvider provider)
-    {
-        using IServiceScope scope = provider.CreateScope();
-
-        ControllerFactory factory = scope.ServiceProvider.GetRequiredService<ControllerFactory>();
-        factory.MapControllers(Assembly.GetCallingAssembly());
-
-        return provider;
-    }
-
-    public static Task RegisterApplicationCommands(this DiscordClient client,
-        ulong? debugGuildId = null)
-    {
-        ControllerFactory factory = client.ServiceProvider.GetRequiredService<ControllerFactory>();
-        return factory.RegisterCommandsAsync(client, debugGuildId);
-    }
-
-    public static EventHandlingBuilder HandleCommandEvents(this EventHandlingBuilder builder)
-    {
-        return builder
-            .HandleMessageCreated(CommandEventsHandler.HandleMessageCreatedAsync)
-            .HandleInteractionCreated(CommandEventsHandler.HandleInteractionCreatedAsync);
     }
 }

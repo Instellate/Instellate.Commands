@@ -6,11 +6,11 @@ namespace Instellate.Commands.Actions;
 
 public sealed class MessageActionContext : IActionContext
 {
-    private int _deferred = 0;
+    private int _deferred;
 
     public MessageCreatedEventArgs MessageEvent { get; }
     public DiscordClient Client { get; }
-    public DiscordUser Author => MessageEvent.Author;
+    public DiscordUser Author => this.MessageEvent.Author;
 
     public MessageActionContext(MessageCreatedEventArgs messageEvent, DiscordClient client)
     {

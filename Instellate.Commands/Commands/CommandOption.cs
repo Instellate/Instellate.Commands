@@ -26,11 +26,13 @@ public class CommandOption
 
     public DiscordApplicationCommandOption ConstructEntity()
     {
-        return new DiscordApplicationCommandOption(this.Name,
+        return new DiscordApplicationCommandOption(
+            this.Name,
             this.Description,
             this.Type,
             !this.Optional,
             minValue: this.MinValue!,
-            maxValue: this.MaxValue!);
+            maxValue: this.MaxValue!
+        );
     }
 }

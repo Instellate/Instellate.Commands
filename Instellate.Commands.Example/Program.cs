@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.EventArgs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,19 +12,23 @@ public static class Program
     {
         IConfiguration config = new ConfigurationBuilder()
             .AddUserSecrets(typeof(Program).Assembly)
-            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.json", true)
             .Build();
 
         DiscordClientBuilder builder
-            = DiscordClientBuilder.CreateSharded(config["BOT_TOKEN"]!,
-                DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents);
+            = DiscordClientBuilder.CreateSharded(
+                config["BOT_TOKEN"]!,
+                DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
+            );
 
         builder
             .ConfigureServices(ConfigureServices)
             .ConfigureEventHandlers(e =>
-                e.HandleCommandEvents().HandleSessionCreated(HandleSessionCreatedAsync))
+                e.HandleCommandEvents().HandleSessionCreated(HandleSessionCreatedAsync)
+            )
             .ConfigureLogging(l =>
-                l.AddConsole().AddConfiguration(config.GetSection("Logging")));
+                l.AddConsole().AddConfiguration(config.GetSection("Logging"))
+            );
 
         DiscordClient client = builder.Build();
         client.ServiceProvider.MapCommandControllers();
@@ -46,9 +50,11 @@ public static class Program
 
     private static Task HandleSessionCreatedAsync(DiscordClient client, SessionCreatedEventArgs e)
     {
-        client.Logger.LogInformation("Shard {ShardId} created, taking care of {GuildCount} guilds",
+        client.Logger.LogInformation(
+            "Shard {ShardId} created, taking care of {GuildCount} guilds",
             e.ShardId,
-            e.GuildIds.Count);
+            e.GuildIds.Count
+        );
         return Task.CompletedTask;
     }
 }

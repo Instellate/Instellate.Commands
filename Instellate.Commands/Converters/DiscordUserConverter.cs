@@ -7,21 +7,16 @@ namespace Instellate.Commands.Converters;
 
 public partial class DiscordUserConverter : IConverter<DiscordUser>
 {
-    [GeneratedRegex(@"^<@!?(\d+)>$", RegexOptions.Compiled)]
-    private static partial Regex UserMentionRegex();
-
-    // ReSharper disable once UnusedMember.Local Might have use late
-    [GeneratedRegex(@"^(?:[a-z]|\.[a-z_])+\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
-    private static partial Regex UsernameRegex();
-
     public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.User;
 
     public CommandOption ConstructOption(CommandOptionMetadata metadata)
     {
-        return new CommandOption(metadata.Name,
+        return new CommandOption(
+            metadata.Name,
             metadata.Description,
             metadata.Optional,
-            metadata.Positional)
+            metadata.Positional
+        )
         {
             Type = this.Type
         };
@@ -44,8 +39,10 @@ public partial class DiscordUserConverter : IConverter<DiscordUser>
         return await context.Client.GetUserAsync(userId);
     }
 
-    public async ValueTask<object?> ConvertFromString(Optional<string> input,
-        IActionContext context)
+    public async ValueTask<object?> ConvertFromString(
+        Optional<string> input,
+        IActionContext context
+    )
     {
         if (!input.TryGetValue(out string? value))
         {
@@ -64,9 +61,14 @@ public partial class DiscordUserConverter : IConverter<DiscordUser>
             userId = ulong.Parse(match.Groups[1].Value);
             return await context.Client.GetUserAsync(userId);
         }
-        else
-        {
-            throw new ArgumentException("Input does not follow user format", nameof(input));
-        }
+
+        throw new ArgumentException("Input does not follow user format", nameof(input));
     }
+
+    [GeneratedRegex(@"^<@!?(\d+)>$", RegexOptions.Compiled)]
+    private static partial Regex UserMentionRegex();
+
+    // ReSharper disable once UnusedMember.Local Might have use late
+    [GeneratedRegex(@"^(?:[a-z]|\.[a-z_])+\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex UsernameRegex();
 }

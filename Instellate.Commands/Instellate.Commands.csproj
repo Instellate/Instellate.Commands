@@ -7,9 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02563" />
-      <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
+        <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02563"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.4"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1"/>
     </ItemGroup>
 
 </Project>

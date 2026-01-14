@@ -5,11 +5,11 @@ namespace Instellate.Commands.Actions;
 
 public sealed class InteractionActionContext : IActionContext
 {
-    private int _deferred = 0;
+    private int _deferred;
 
     public DiscordInteraction Interaction { get; }
     public DiscordClient Client { get; }
-    public DiscordUser Author => Interaction.User;
+    public DiscordUser Author => this.Interaction.User;
 
     public InteractionActionContext(DiscordInteraction interaction, DiscordClient client)
     {
@@ -23,10 +23,8 @@ public sealed class InteractionActionContext : IActionContext
         {
             return this.Interaction.DeferAsync();
         }
-        else
-        {
-            return Task.CompletedTask;
-        }
+
+        return Task.CompletedTask;
     }
 
     public Task CreateResponseAsync(IDiscordMessageBuilder builder, bool ephemeral)
@@ -37,14 +35,13 @@ public sealed class InteractionActionContext : IActionContext
             followupBuilder.AsEphemeral(ephemeral);
             return this.Interaction.CreateFollowupMessageAsync(followupBuilder);
         }
-        else
-        {
-            DiscordInteractionResponseBuilder responseBuilder = new(builder);
-            responseBuilder.AsEphemeral(ephemeral);
-            return this.Interaction.CreateResponseAsync(
-                DiscordInteractionResponseType.ChannelMessageWithSource,
-                responseBuilder);
-        }
+
+        DiscordInteractionResponseBuilder responseBuilder = new(builder);
+        responseBuilder.AsEphemeral(ephemeral);
+        return this.Interaction.CreateResponseAsync(
+            DiscordInteractionResponseType.ChannelMessageWithSource,
+            responseBuilder
+        );
     }
 
     public Task CreateModalResponseAsync(DiscordModalBuilder modal)

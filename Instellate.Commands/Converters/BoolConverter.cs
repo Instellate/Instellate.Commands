@@ -10,10 +10,12 @@ public class BoolConverter : IConverter<bool>
 
     public CommandOption ConstructOption(CommandOptionMetadata metadata)
     {
-        return new CommandOption(metadata.Name,
+        return new CommandOption(
+            metadata.Name,
             metadata.Description,
             metadata.Optional,
-            metadata.Positional)
+            metadata.Positional
+        )
         {
             Type = this.Type
         };

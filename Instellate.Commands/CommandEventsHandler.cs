@@ -12,8 +12,10 @@ internal static class CommandEventsHandler
         return factory.HandleMessageCreatedAsync(client, e);
     }
 
-    internal static Task HandleInteractionCreatedAsync(DiscordClient client,
-        InteractionCreatedEventArgs e)
+    internal static Task HandleInteractionCreatedAsync(
+        DiscordClient client,
+        InteractionCreatedEventArgs e
+    )
     {
         ControllerFactory factory = client.ServiceProvider.GetRequiredService<ControllerFactory>();
         return factory.HandleInteractionCreatedAsync(client, e);
