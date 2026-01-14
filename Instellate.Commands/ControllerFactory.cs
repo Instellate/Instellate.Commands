@@ -22,8 +22,13 @@ public class ControllerFactory
     private readonly Dictionary<string, ICommand> _commands = [];
     private readonly Dictionary<string, ContextMenu> _contextMenus = [];
 
-    public ControllerFactory(ILogger<ControllerFactory> logger,
-        IServiceProvider provider)
+    public IReadOnlyDictionary<string, ICommand> Commands => this._commands;
+    public IReadOnlyDictionary<string, ContextMenu> ContextMenus => this._contextMenus;
+
+    public ControllerFactory(
+        ILogger<ControllerFactory> logger,
+        IServiceProvider provider
+    )
     {
         this._logger = logger;
         this._provider = provider;
@@ -45,7 +50,8 @@ public class ControllerFactory
             {
                 this._logger.LogWarning(
                     "Class {ClassName} is marked with BaseController but does not derive the BaseController class. This class will not be registerd",
-                    type.Name);
+                    type.Name
+                );
             }
             else
             {
@@ -117,13 +123,13 @@ public class ControllerFactory
 
     internal async Task HandleMessageCreatedAsync(DiscordClient client, MessageCreatedEventArgs e)
     {
-        using IServiceScope scope = this._provider.CreateScope();
-
         string content = e.Message.Content;
         if (string.IsNullOrWhiteSpace(content))
         {
             return;
         }
+
+        using IServiceScope scope = this._provider.CreateScope();
 
         MessageActionContext actionContext = new(e, client);
         IPrefixResolver resolver = scope.ServiceProvider.GetRequiredService<IPrefixResolver>();
@@ -138,8 +144,18 @@ public class ControllerFactory
             return;
         }
 
+        IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
+
         content = content[prefix.Length..];
-        Parser.Result result = Parser.Parse(content);
+        Parser.Result result;
+        try
+        {
+            result = Parser.Parse(content);
+        }
+        catch (CommandsException)
+        {
+            return;
+        }
 
         ICommand? command = null;
         int i = 0;
@@ -237,14 +253,14 @@ public class ControllerFactory
             catch (Exception exception)
             {
                 this._logger.LogError(exception, "Got error when trying to convert value");
-
-                IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
                 if (errorHandler is not null)
                 {
-                    IActionResult actionResult = await errorHandler.HandleConverterError(executor,
+                    IActionResult actionResult = await errorHandler.HandleConverterError(
+                        executor,
                         option,
                         strOption,
-                        exception);
+                        exception
+                    );
                     await actionResult.ExecuteResultAsync(actionContext);
                 }
 
@@ -254,20 +270,20 @@ public class ControllerFactory
 
         try
         {
-            await ExecuteCommandAsync(executor,
+            await ExecuteCommandAsync(
+                executor,
                 options,
                 scope.ServiceProvider,
                 actionContext,
                 client,
                 e.Author,
                 e.Channel,
-                e.Message);
+                e.Message
+            );
         }
         catch (Exception exception)
         {
             this._logger.LogError(exception, "Got error when trying to execute command");
-
-            IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
             if (errorHandler is not null)
             {
                 IActionResult actionResult =
@@ -277,8 +293,10 @@ public class ControllerFactory
         }
     }
 
-    internal async Task HandleInteractionCreatedAsync(DiscordClient client,
-        InteractionCreatedEventArgs e)
+    internal async Task HandleInteractionCreatedAsync(
+        DiscordClient client,
+        InteractionCreatedEventArgs e
+    )
     {
         if (e.Interaction.Type != DiscordInteractionType.ApplicationCommand)
         {
@@ -294,6 +312,7 @@ public class ControllerFactory
         }
 
         using IServiceScope scope = this._provider.CreateScope();
+        IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
 
         string name = interaction.Data.Name;
         IReadOnlyList<DiscordInteractionDataOption> dataOptions = e.Interaction.Data.Options;
@@ -320,7 +339,8 @@ public class ControllerFactory
                 {
                     this._logger.LogWarning(
                         "Couldn't find subcommand for command group {CommandGroup}",
-                        commandGroup.Name);
+                        commandGroup.Name
+                    );
                     return;
                 }
 
@@ -329,7 +349,8 @@ public class ControllerFactory
                     this._logger.LogWarning(
                         "Couldn't get command with name {Name} for command group {CommandGroup}",
                         name,
-                        commandGroup.Name);
+                        commandGroup.Name
+                    );
                     return;
                 }
             }
@@ -375,7 +396,20 @@ public class ControllerFactory
                     continue;
                 }
 
-                throw new NotImplementedException($"Option {option.Name} not found");
+                this._logger.LogError(
+                    "Couldn't find option {Option} for commmand {Command}",
+                    option.Name,
+                    executor.Name
+                );
+                if (errorHandler is not null)
+                {
+                    CommandsException exception = new($"Option {option.Name} not found");
+                    IActionResult actionResult
+                        = await errorHandler.HandleCommandError(executor, exception);
+                    await actionResult.ExecuteResultAsync(actionContext);
+                }
+
+                return;
             }
 
             try
@@ -387,14 +421,14 @@ public class ControllerFactory
             catch (Exception exception)
             {
                 this._logger.LogError(exception, "Got error when trying to convert value");
-
-                IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
                 if (errorHandler is not null)
                 {
-                    IActionResult actionResult = await errorHandler.HandleConverterError(executor,
+                    IActionResult actionResult = await errorHandler.HandleConverterError(
+                        executor,
                         option,
                         dataOption.Value,
-                        exception);
+                        exception
+                    );
                     await actionResult.ExecuteResultAsync(actionContext);
                 }
 
@@ -404,20 +438,20 @@ public class ControllerFactory
 
         try
         {
-            await ExecuteCommandAsync(executor,
+            await ExecuteCommandAsync(
+                executor,
                 options,
                 scope.ServiceProvider,
                 actionContext,
                 client,
                 interaction.User,
                 interaction.Channel,
-                interaction.Message);
+                interaction.Message
+            );
         }
         catch (Exception exception)
         {
             this._logger.LogError(exception, "Got error when trying to execute command");
-
-            IErrorHandler? errorHandler = scope.ServiceProvider.GetService<IErrorHandler>();
             if (errorHandler is not null)
             {
                 IActionResult actionResult =
@@ -462,7 +496,9 @@ public class ControllerFactory
             OptionAttribute? option = parameter.GetCustomAttribute<OptionAttribute>();
             if (option is null)
             {
-                throw new NotImplementedException("Proper error message not implemented");
+                throw new CommandsException(
+                    $"Paremeter needs to specify a {nameof(OptionAttribute)} specified"
+                );
             }
 
             int? positional = null;
@@ -476,10 +512,12 @@ public class ControllerFactory
             bool optional = nullabilityInfoContext.Create(parameter).ReadState ==
                 NullabilityState.Nullable || parameter.HasDefaultValue;
 
-            CommandOptionMetadata metadata = new(option.Name,
+            CommandOptionMetadata metadata = new(
+                option.Name,
                 option.Description,
                 optional,
-                positional)
+                positional
+            )
             {
                 MinValue = parameter.GetCustomAttribute<MinValueAttribute>()?.Value,
                 MaxValue = parameter.GetCustomAttribute<MaxValueAttribute>()?.Value
@@ -504,7 +542,8 @@ public class ControllerFactory
         DiscordClient client,
         DiscordUser author,
         DiscordChannel channel,
-        DiscordMessage? message)
+        DiscordMessage? message
+    )
     {
         BaseController controller =
             (BaseController)provider.GetRequiredService(type);
@@ -525,7 +564,8 @@ public class ControllerFactory
         DiscordClient client,
         DiscordUser author,
         DiscordChannel channel,
-        DiscordMessage? message)
+        DiscordMessage? message
+    )
     {
         BaseController controller = PrepareController(
             command.Method.DeclaringType!,

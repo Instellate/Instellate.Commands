@@ -22,7 +22,8 @@ public static class Parser
     public record Result(
         List<string> Commands,
         Dictionary<string, string?> Options,
-        List<string> PositionalArguments);
+        List<string> PositionalArguments
+    );
 
     public static Result Parse(string input)
     {
@@ -34,7 +35,7 @@ public static class Parser
         Match commandMatch = commandRegex.Match(input);
         if (!commandMatch.Success)
         {
-            throw new NotImplementedException("Proper error message not implemented");
+            throw new CommandsException("Cannot find command");
         }
 
         do
@@ -43,7 +44,6 @@ public static class Parser
             input = input[(commandMatch.Index + commandMatch.Length)..].Trim();
             commandMatch = commandRegex.Match(input);
         } while (commandMatch.Success);
-
 
         string? lastArgument = null;
         while (!string.IsNullOrWhiteSpace(input))
