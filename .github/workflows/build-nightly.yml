@@ -68,4 +68,4 @@ jobs:
           path: './docs/_site/'
 
       - name: Deploy Pages
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/deploy-pages@v4
