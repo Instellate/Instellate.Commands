@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using DSharpPlus.Entities;
+using Instellate.Commands.Attributes.Application;
 
 namespace Instellate.Commands.Commands;
 
@@ -13,6 +14,7 @@ public class Command : ICommand
     public string Description { get; }
     public IReadOnlyList<CommandOption> Options { get; }
     public DiscordPermissions? RequirePermissions { get; }
+    public IReadOnlyList<DiscordApplicationIntegrationType>? IntegrationTypes { get; }
     internal MethodInfo Method { get; }
 
     internal Command(
@@ -27,6 +29,9 @@ public class Command : ICommand
         this.Description = description;
         this.Options = options;
         this.RequirePermissions = requirePermissions;
+        this.IntegrationTypes
+            = method.GetCustomAttribute<AppIntegrationAttribute>()?.IntegrationTypes;
+
         this.Method = method;
         this._executionLambda = BuildExecutionLambda(method, options);
     }
@@ -44,7 +49,8 @@ public class Command : ICommand
             this.Name,
             this.Description,
             options,
-            defaultMemberPermissions: this.RequirePermissions
+            defaultMemberPermissions: this.RequirePermissions,
+            integrationTypes: this.IntegrationTypes
         );
     }
 
