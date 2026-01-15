@@ -14,6 +14,7 @@ public class CommandGroup : ICommand
     public IReadOnlyDictionary<string, ICommand> Children => this._children;
     public DiscordPermissions? RequirePermissions { get; }
     public IReadOnlyList<DiscordApplicationIntegrationType>? IntegrationTypes { get; }
+    public IReadOnlyList<DiscordInteractionContextType>? Contexts { get; }
     public bool RequireGuild { get; }
 
     internal CommandGroup(
@@ -28,6 +29,8 @@ public class CommandGroup : ICommand
             = type.GetCustomAttribute<RequirePermissionsAttribute>()?.Permissions;
         this.IntegrationTypes
             = type.GetCustomAttribute<AppIntegrationAttribute>()?.IntegrationTypes;
+        this.Contexts
+            = type.GetCustomAttribute<AppContextsAttribute>()?.Contexts;
         this.RequireGuild = type.GetCustomAttribute<RequireGuildAttribute>() is not null;
     }
 
@@ -45,7 +48,8 @@ public class CommandGroup : ICommand
             children,
             allowDMUsage: !RequireGuild,
             defaultMemberPermissions: this.RequirePermissions,
-            integrationTypes: this.IntegrationTypes
+            integrationTypes: this.IntegrationTypes,
+            contexts: this.Contexts
         );
     }
 

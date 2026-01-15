@@ -18,6 +18,7 @@ public class Command : ICommand
     public IReadOnlyList<CommandOption> Options { get; }
     public DiscordPermissions? RequirePermissions { get; }
     public IReadOnlyList<DiscordApplicationIntegrationType>? IntegrationTypes { get; }
+    public IReadOnlyList<DiscordInteractionContextType>? Contexts { get; }
     public bool RequireGuildAttribute { get; }
 
     internal Command(
@@ -34,6 +35,8 @@ public class Command : ICommand
         this.RequirePermissions = requirePermissions;
         this.IntegrationTypes
             = method.GetCustomAttribute<AppIntegrationAttribute>()?.IntegrationTypes;
+        this.Contexts
+            = method.GetCustomAttribute<AppContextsAttribute>()?.Contexts;
         this.RequireGuildAttribute = method.GetCustomAttribute<RequireGuildAttribute>() is not null;
 
         this._method = method;
@@ -55,7 +58,8 @@ public class Command : ICommand
             options,
             allowDMUsage: !this.RequireGuildAttribute,
             defaultMemberPermissions: this.RequirePermissions,
-            integrationTypes: this.IntegrationTypes
+            integrationTypes: this.IntegrationTypes,
+            contexts: this.Contexts
         );
     }
 

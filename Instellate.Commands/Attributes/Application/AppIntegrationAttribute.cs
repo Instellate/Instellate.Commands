@@ -9,6 +9,6 @@ public class AppIntegrationAttribute : Attribute
 
     public AppIntegrationAttribute(params DiscordApplicationIntegrationType[] integrations)
     {
-        this.IntegrationTypes = integrations.Length <= 0 ? null : integrations.ToList();
+        this.IntegrationTypes = integrations.ToList();
     }
 }
