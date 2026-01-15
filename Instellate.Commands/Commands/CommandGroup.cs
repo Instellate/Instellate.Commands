@@ -10,12 +10,19 @@ public class CommandGroup : ICommand
     public string Description { get; }
     public DiscordPermissions? RequirePermissions { get; }
     public IReadOnlyDictionary<string, ICommand> Children => this._children;
+    public IReadOnlyList<DiscordApplicationIntegrationType>? IntegrationTypes { get; }
 
-    internal CommandGroup(string name, string description, DiscordPermissions? requirePermissions)
+    internal CommandGroup(
+        string name,
+        string description,
+        DiscordPermissions? requirePermissions,
+        IReadOnlyList<DiscordApplicationIntegrationType>? integrationTypes
+    )
     {
         this.Name = name;
         this.Description = description;
         this.RequirePermissions = requirePermissions;
+        this.IntegrationTypes = integrationTypes;
     }
 
     public DiscordApplicationCommand ConstructApplicationCommand()
@@ -26,7 +33,13 @@ public class CommandGroup : ICommand
             children.Add(child.ConstructApplicationCommandOption());
         }
 
-        return new DiscordApplicationCommand(this.Name, this.Description, children);
+        return new DiscordApplicationCommand(
+            this.Name,
+            this.Description,
+            children,
+            defaultMemberPermissions: this.RequirePermissions,
+            integrationTypes: this.IntegrationTypes
+        );
     }
 
     public DiscordApplicationCommandOption ConstructApplicationCommandOption()

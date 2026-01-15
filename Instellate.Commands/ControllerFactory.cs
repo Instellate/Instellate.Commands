@@ -5,6 +5,7 @@ using DSharpPlus.EventArgs;
 using Instellate.Commands.Actions;
 using Instellate.Commands.ArgumentParser;
 using Instellate.Commands.Attributes;
+using Instellate.Commands.Attributes.Application;
 using Instellate.Commands.Attributes.Text;
 using Instellate.Commands.Commands;
 using Instellate.Commands.Converters;
@@ -67,7 +68,8 @@ public class ControllerFactory
                 group = new CommandGroup(
                     groupAttr.Name,
                     groupAttr.Description,
-                    type.GetCustomAttribute<RequirePermissionsAttribute>()?.Permissions
+                    type.GetCustomAttribute<RequirePermissionsAttribute>()?.Permissions,
+                    type.GetCustomAttribute<AppIntegrationAttribute>()?.IntegrationTypes
                 );
             }
 
