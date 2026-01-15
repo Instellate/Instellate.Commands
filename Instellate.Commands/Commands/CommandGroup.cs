@@ -1,4 +1,7 @@
+using System.Reflection;
 using DSharpPlus.Entities;
+using Instellate.Commands.Attributes;
+using Instellate.Commands.Attributes.Application;
 
 namespace Instellate.Commands.Commands;
 
@@ -8,21 +11,24 @@ public class CommandGroup : ICommand
 
     public string Name { get; }
     public string Description { get; }
-    public DiscordPermissions? RequirePermissions { get; }
     public IReadOnlyDictionary<string, ICommand> Children => this._children;
+    public DiscordPermissions? RequirePermissions { get; }
     public IReadOnlyList<DiscordApplicationIntegrationType>? IntegrationTypes { get; }
+    public bool RequireGuild { get; }
 
     internal CommandGroup(
         string name,
         string description,
-        DiscordPermissions? requirePermissions,
-        IReadOnlyList<DiscordApplicationIntegrationType>? integrationTypes
+        Type type
     )
     {
         this.Name = name;
         this.Description = description;
-        this.RequirePermissions = requirePermissions;
-        this.IntegrationTypes = integrationTypes;
+        this.RequirePermissions
+            = type.GetCustomAttribute<RequirePermissionsAttribute>()?.Permissions;
+        this.IntegrationTypes
+            = type.GetCustomAttribute<AppIntegrationAttribute>()?.IntegrationTypes;
+        this.RequireGuild = type.GetCustomAttribute<RequireGuildAttribute>() is not null;
     }
 
     public DiscordApplicationCommand ConstructApplicationCommand()
@@ -37,6 +43,7 @@ public class CommandGroup : ICommand
             this.Name,
             this.Description,
             children,
+            allowDMUsage: !RequireGuild,
             defaultMemberPermissions: this.RequirePermissions,
             integrationTypes: this.IntegrationTypes
         );

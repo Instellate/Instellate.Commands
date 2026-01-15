@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using DSharpPlus.Entities;
+using Instellate.Commands.Attributes;
 using Instellate.Commands.Attributes.Application;
 
 namespace Instellate.Commands.Commands;
@@ -10,12 +11,14 @@ public class Command : ICommand
     internal readonly Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>>
         _executionLambda;
 
+    internal readonly MethodInfo _method;
+
     public string Name { get; }
     public string Description { get; }
     public IReadOnlyList<CommandOption> Options { get; }
     public DiscordPermissions? RequirePermissions { get; }
     public IReadOnlyList<DiscordApplicationIntegrationType>? IntegrationTypes { get; }
-    internal MethodInfo Method { get; }
+    public bool RequireGuildAttribute { get; }
 
     internal Command(
         string name,
@@ -31,8 +34,9 @@ public class Command : ICommand
         this.RequirePermissions = requirePermissions;
         this.IntegrationTypes
             = method.GetCustomAttribute<AppIntegrationAttribute>()?.IntegrationTypes;
+        this.RequireGuildAttribute = method.GetCustomAttribute<RequireGuildAttribute>() is not null;
 
-        this.Method = method;
+        this._method = method;
         this._executionLambda = BuildExecutionLambda(method, options);
     }
 
@@ -49,6 +53,7 @@ public class Command : ICommand
             this.Name,
             this.Description,
             options,
+            allowDMUsage: !this.RequireGuildAttribute,
             defaultMemberPermissions: this.RequirePermissions,
             integrationTypes: this.IntegrationTypes
         );
