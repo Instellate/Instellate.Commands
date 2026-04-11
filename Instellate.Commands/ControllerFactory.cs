@@ -14,6 +14,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Instellate.Commands;
 
+/// <summary>
+/// Manages creation, lifetimes and execution of controllers
+/// </summary>
 public class ControllerFactory
 {
     private readonly Dictionary<string, ICommand> _commands = [];

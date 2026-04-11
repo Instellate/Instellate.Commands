@@ -1,5 +1,9 @@
 namespace Instellate.Commands.Attributes;
 
+/// <summary>
+/// The max value for a command
+/// </summary>
+/// <remarks>For parameters that accept numbers as values</remarks>
 [AttributeUsage(AttributeTargets.Parameter)]
 public class MaxValueAttribute : Attribute
 {

@@ -2,6 +2,9 @@ using DSharpPlus.Entities;
 
 namespace Instellate.Commands.Actions;
 
+/// <summary>
+/// Returns a modal response to the user 
+/// </summary>
 public class ModalActionResult : IActionResult
 {
     private readonly DiscordModalBuilder _modalBuilder;

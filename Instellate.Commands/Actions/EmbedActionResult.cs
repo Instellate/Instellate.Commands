@@ -2,6 +2,9 @@ using DSharpPlus.Entities;
 
 namespace Instellate.Commands.Actions;
 
+/// <summary>
+/// Returns a embed response to the user 
+/// </summary>
 public sealed class EmbedActionResult : IActionResult
 {
     private readonly DiscordEmbedBuilder _builder;

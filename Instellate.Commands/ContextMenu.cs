@@ -6,6 +6,9 @@ using Instellate.Commands.Actions;
 
 namespace Instellate.Commands;
 
+/// <summary>
+/// Manages registration and execution for context menus
+/// </summary>
 public class ContextMenu
 {
     internal readonly Type _controllerType;

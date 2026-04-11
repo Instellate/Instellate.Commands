@@ -3,12 +3,22 @@ using DSharpPlus.Entities;
 
 namespace Instellate.Commands.Actions;
 
+/// <summary>
+/// A action context for interactions
+/// </summary>
 public sealed class InteractionActionContext : IActionContext
 {
     private int _deferred;
 
+    /// <summary>
+    /// The interaction used in the response
+    /// </summary>
     public DiscordInteraction Interaction { get; }
+
+    /// <inheritdoc/>
     public DiscordClient Client { get; }
+
+    /// <inheritdoc/>
     public DiscordUser Author => this.Interaction.User;
 
     public InteractionActionContext(DiscordInteraction interaction, DiscordClient client)
@@ -17,6 +27,7 @@ public sealed class InteractionActionContext : IActionContext
         this.Client = client;
     }
 
+    /// <inheritdoc/>
     public Task DeferAsync()
     {
         if (Interlocked.CompareExchange(ref this._deferred, 1, 0) == 0)
@@ -27,6 +38,7 @@ public sealed class InteractionActionContext : IActionContext
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
     public Task CreateResponseAsync(IDiscordMessageBuilder builder, bool ephemeral)
     {
         if (this._deferred == 1)
@@ -44,6 +56,7 @@ public sealed class InteractionActionContext : IActionContext
         );
     }
 
+    /// <inheritdoc/>
     public Task CreateModalResponseAsync(DiscordModalBuilder modal)
     {
         return this.Interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);

@@ -10,6 +10,11 @@ namespace Instellate.Commands;
 
 public static class CommandsServiceExtensions
 {
+    /// <summary>
+    /// Find all command controllers and map them to commands
+    /// </summary>
+    /// <param name="client"></param>
+    /// <returns></returns>
     public static DiscordClient MapCommandControllers(this DiscordClient client)
     {
         ControllerFactory factory = client.ServiceProvider.GetRequiredService<ControllerFactory>();
@@ -17,6 +22,12 @@ public static class CommandsServiceExtensions
         return client;
     }
 
+    /// <summary>
+    /// Register all application commands to discord
+    /// </summary>
+    /// <param name="client"></param>
+    /// <param name="debugGuildId">Guild id to register it to, all commands will be registered public if null is specified</param>
+    /// <returns></returns>
     public static Task RegisterApplicationCommands(
         this DiscordClient client,
         ulong? debugGuildId = null
@@ -26,6 +37,11 @@ public static class CommandsServiceExtensions
         return factory.RegisterCommandsAsync(client, debugGuildId);
     }
 
+    /// <summary>
+    /// Register handling of command events
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <returns></returns>
     public static EventHandlingBuilder HandleCommandEvents(this EventHandlingBuilder builder)
     {
         return builder
@@ -33,6 +49,12 @@ public static class CommandsServiceExtensions
             .HandleInteractionCreated(CommandEventsHandler.HandleInteractionCreatedAsync);
     }
 
+    /// <summary>
+    /// Finds and registers all command controllers into the discord client service collection
+    /// Also registers all basic converters 
+    /// </summary>
+    /// <param name="collection"></param>
+    /// <returns></returns>
     public static IServiceCollection AddCommands(this IServiceCollection collection)
     {
         Assembly assembly = Assembly.GetCallingAssembly();
@@ -68,6 +90,12 @@ public static class CommandsServiceExtensions
         return collection.AddSingleton<IConverter<TValue>, TConverter>();
     }
 
+    /// <summary>
+    /// Adds a static prefix resolver
+    /// </summary>
+    /// <param name="collection"></param>
+    /// <param name="prefix">The static prefix to use</param>
+    /// <returns></returns>
     public static IServiceCollection AddStaticPrefixResolver(
         this IServiceCollection collection,
         string prefix
