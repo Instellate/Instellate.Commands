@@ -1,5 +1,6 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 
 namespace Instellate.Commands.Actions;
 
@@ -21,6 +22,9 @@ public sealed class InteractionActionContext : IActionContext
     /// <inheritdoc/>
     public DiscordUser Author => this.Interaction.User;
 
+    /// <inheritdoc/>
+    public DiscordGuild? Guild => this.Interaction.Guild;
+
     public InteractionActionContext(DiscordInteraction interaction, DiscordClient client)
     {
         this.Interaction = interaction;
@@ -41,7 +45,7 @@ public sealed class InteractionActionContext : IActionContext
     /// <inheritdoc/>
     public Task CreateResponseAsync(IDiscordMessageBuilder builder, bool ephemeral)
     {
-        if (this._deferred == 1)
+        if (Interlocked.CompareExchange(ref this._deferred, 1, 1) == 1)
         {
             DiscordFollowupMessageBuilder followupBuilder = new(builder);
             followupBuilder.AsEphemeral(ephemeral);
@@ -60,5 +64,26 @@ public sealed class InteractionActionContext : IActionContext
     public Task CreateModalResponseAsync(DiscordModalBuilder modal)
     {
         return this.Interaction.CreateResponseAsync(DiscordInteractionResponseType.Modal, modal);
+    }
+
+    /// <inheritdoc/>
+    public Task CreateFollowUpResponseAsync(IDiscordMessageBuilder builder, bool ephemeral = false)
+    {
+        DiscordFollowupMessageBuilder followupBuilder = new(builder);
+        followupBuilder.AsEphemeral(ephemeral);
+        return this.Interaction.CreateFollowupMessageAsync(followupBuilder);
+    }
+
+    /// <inheritdoc/>
+    public async Task<DiscordMessage?> GetResponseMessageAsync()
+    {
+        try
+        {
+            return await this.Interaction.GetOriginalResponseAsync();
+        }
+        catch (NotFoundException)
+        {
+            return null;
+        }
     }
 }

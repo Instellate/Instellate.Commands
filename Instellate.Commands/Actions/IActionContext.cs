@@ -14,9 +14,14 @@ public interface IActionContext
     public DiscordClient Client { get; }
 
     /// <summary>
-    /// The author of the message
+    /// The author of the action
     /// </summary>
     public DiscordUser Author { get; }
+
+    /// <summary>
+    /// The guild of the action
+    /// </summary>
+    public DiscordGuild? Guild { get; }
 
     /// <summary>
     /// Defers the reply for later longer wait time responses
@@ -38,4 +43,18 @@ public interface IActionContext
     /// <param name="modal">The modal builder</param>
     /// <returns></returns>
     Task CreateModalResponseAsync(DiscordModalBuilder modal);
+
+    /// <summary>
+    /// Creates a follow up response
+    /// </summary>
+    /// <param name="builder">The message builder used in the response</param>
+    /// <param name="ephemeral">If the message should be ephemeral or not</param>
+    /// <returns></returns>
+    Task CreateFollowUpResponseAsync(IDiscordMessageBuilder builder, bool ephemeral = false);
+
+    /// <summary>
+    /// Gets the original response message
+    /// </summary>
+    /// <returns></returns>
+    Task<DiscordMessage?> GetResponseMessageAsync();
 }

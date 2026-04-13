@@ -1,6 +1,8 @@
+using System.Threading.Tasks.Dataflow;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Instellate.Commands.Actions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Instellate.Commands;
 
@@ -65,6 +67,60 @@ public abstract class BaseController
         return new ModalActionResult(modalBuilder);
     }
 
+    /// <summary>
+    /// Creates an action result that causes nothing
+    /// </summary>
+    /// <returns></returns>
+    protected EmptyActionResult Empty()
+    {
+        return new EmptyActionResult();
+    }
+
+    protected async Task<ComponentInteractionResult?> ComponentInteractionAsync(
+        IActionResult result,
+        TimeSpan? expiry = null
+    )
+    {
+        expiry ??= TimeSpan.FromSeconds(5);
+
+        await result.ExecuteResultAsync(this.ActionContext);
+
+        CancellationTokenSource ctSource = new();
+        ctSource.CancelAfter(expiry.Value);
+        BufferBlock<InteractionActionContext> bufferBlock = new();
+
+        ControllerFactory factory = Client.ServiceProvider.GetRequiredService<ControllerFactory>();
+        DiscordMessage? message = await this.ActionContext.GetResponseMessageAsync();
+        if (message is null)
+        {
+            throw new CommandsException(
+                "Cannot wait for component interaction without a response message"
+            );
+        }
+
+        try
+        {
+            factory._componentBlocks.TryAdd(message.Id, bufferBlock);
+            InteractionActionContext newContext
+                = await bufferBlock.ReceiveAsync(cancellationToken: ctSource.Token);
+
+            this.ActionContext = newContext;
+
+            return new ComponentInteractionResult(
+                newContext.Interaction.Data.CustomId,
+                newContext.Interaction.Data.Values
+            );
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            factory._componentBlocks.TryRemove(message.Id, out _);
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Defers the message for a later reply

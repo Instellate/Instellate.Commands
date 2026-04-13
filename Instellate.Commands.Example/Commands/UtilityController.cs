@@ -44,6 +44,38 @@ public class UtilityController : BaseController
         return Modal(modal);
     }
 
+    [Command("components", "Component test")]
+    public async Task<IActionResult> ComponentTestAsync()
+    {
+        DiscordActionRowComponent components = new(
+            [
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "hello", "Hello"),
+                new DiscordButtonComponent(DiscordButtonStyle.Primary, "howdy", "Howdy")
+            ]
+        );
+
+        DiscordMessageBuilder message = new();
+        message.WithContent("Press the button for a response!")
+            .AddActionRowComponent(components);
+
+        ComponentInteractionResult? result
+            = await ComponentInteractionAsync(MessageResponse(message));
+        if (result is null)
+        {
+            return Empty();
+        }
+
+        switch (result.CustomId)
+        {
+            case "hello":
+                return Text("Hello!");
+            case "howdy":
+                return Text("Howdy!");
+            default:
+                return Empty();
+        }
+    }
+
     [ContextMenu("Get User Info")]
     public async Task<string> UserInfoAsync(DiscordUser user)
     {

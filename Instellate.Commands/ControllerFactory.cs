@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Reflection;
+using System.Threading.Tasks.Dataflow;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -23,6 +25,9 @@ public class ControllerFactory
     private readonly Dictionary<string, ContextMenu> _contextMenus = [];
     private readonly ILogger<ControllerFactory> _logger;
     private readonly IServiceProvider _provider;
+
+    internal ConcurrentDictionary<ulong, BufferBlock<InteractionActionContext>> _componentBlocks
+        = new();
 
     public IReadOnlyDictionary<string, ICommand> Commands => this._commands;
     public IReadOnlyDictionary<string, ContextMenu> ContextMenus => this._contextMenus;
@@ -332,6 +337,26 @@ public class ControllerFactory
         InteractionCreatedEventArgs e
     )
     {
+        if (e.Interaction.Type == DiscordInteractionType.Component)
+        {
+            if (e.Interaction.Message?.Id is not { } messageId)
+            {
+                return;
+            }
+
+            if (!this._componentBlocks.TryGetValue(
+                    messageId,
+                    out BufferBlock<InteractionActionContext>? buffer
+                ))
+            {
+                return;
+            }
+
+            InteractionActionContext componentActionContext = new(e.Interaction, client);
+            await buffer.SendAsync(componentActionContext);
+            return;
+        }
+
         if (e.Interaction.Type != DiscordInteractionType.ApplicationCommand)
         {
             return;

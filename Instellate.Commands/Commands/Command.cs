@@ -6,6 +6,9 @@ using Instellate.Commands.Attributes.Application;
 
 namespace Instellate.Commands.Commands;
 
+/// <summary>
+/// A executable command
+/// </summary>
 public class Command : ICommand
 {
     internal readonly Func<BaseController, IReadOnlyList<object?>, Task<IActionResult>>
@@ -13,13 +16,36 @@ public class Command : ICommand
 
     internal readonly MethodInfo _method;
 
+    /// <inheritdoc/>
     public string Name { get; }
+
+    /// <inheritdoc/>
     public string Description { get; }
+
+    /// <summary>
+    /// Options that this command requires
+    /// </summary>
     public IReadOnlyList<CommandOption> Options { get; }
+
+    /// <summary>
+    /// Required permissions to execute this command
+    /// </summary>
     public DiscordPermissions? RequirePermissions { get; }
+
+    /// <summary>
+    /// Integration type for this command group
+    /// </summary>
     public IReadOnlyList<DiscordApplicationIntegrationType>? IntegrationTypes { get; }
+
+    /// <summary>
+    /// Context types for this command
+    /// </summary>
     public IReadOnlyList<DiscordInteractionContextType>? Contexts { get; }
-    public bool RequireGuildAttribute { get; }
+
+    /// <summary>
+    /// If this command requires being executed in a guild or not
+    /// </summary>
+    public bool RequireGuild { get; }
 
     internal Command(
         string name,
@@ -37,13 +63,13 @@ public class Command : ICommand
             = method.GetCustomAttribute<AppIntegrationAttribute>()?.IntegrationTypes;
         this.Contexts
             = method.GetCustomAttribute<AppContextsAttribute>()?.Contexts;
-        this.RequireGuildAttribute = method.GetCustomAttribute<RequireGuildAttribute>() is not null;
+        this.RequireGuild = method.GetCustomAttribute<RequireGuildAttribute>() is not null;
 
         this._method = method;
         this._executionLambda = BuildExecutionLambda(method, options);
     }
 
-
+    /// <inheritdoc/>
     public DiscordApplicationCommand ConstructApplicationCommand()
     {
         List<DiscordApplicationCommandOption> options = new(this.Options.Count);
@@ -56,13 +82,14 @@ public class Command : ICommand
             this.Name,
             this.Description,
             options,
-            allowDMUsage: !this.RequireGuildAttribute,
+            allowDMUsage: !this.RequireGuild,
             defaultMemberPermissions: this.RequirePermissions,
             integrationTypes: this.IntegrationTypes,
             contexts: this.Contexts
         );
     }
 
+    /// <inheritdoc/>
     public DiscordApplicationCommandOption ConstructApplicationCommandOption()
     {
         List<DiscordApplicationCommandOption> options = new(this.Options.Count);

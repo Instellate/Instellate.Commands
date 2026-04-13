@@ -36,7 +36,7 @@ public partial class DiscordChannelConverter : IConverter<DiscordChannel>
             return channel;
         }
 
-        return await context.Client.GetChannelAsync(channelId);
+        return await GetChannelAsync(context, channelId);
     }
 
     public async ValueTask<object?> ConvertFromString(
@@ -51,7 +51,7 @@ public partial class DiscordChannelConverter : IConverter<DiscordChannel>
 
         if (ulong.TryParse(value, out ulong channelId))
         {
-            return await context.Client.GetChannelAsync(channelId);
+            return await GetChannelAsync(context, channelId);
         }
 
         Regex channelMention = ChannelMentionRegex();
@@ -59,10 +59,26 @@ public partial class DiscordChannelConverter : IConverter<DiscordChannel>
         if (match.Success)
         {
             channelId = ulong.Parse(match.Groups[1].Value);
-            return await context.Client.GetChannelAsync(channelId);
+            return await GetChannelAsync(context, channelId);
         }
 
         throw new ArgumentException("Input does not follow channel format", nameof(input));
+    }
+
+    private static async ValueTask<DiscordChannel> GetChannelAsync(
+        IActionContext context,
+        ulong channelId
+    )
+    {
+        if (context.Guild is not null)
+        {
+            if (context.Guild.Channels.TryGetValue(channelId, out DiscordChannel? channel))
+            {
+                return channel;
+            }
+        }
+
+        return await context.Client.GetChannelAsync(channelId);
     }
 
     [GeneratedRegex(@"^<#!?(\d+)>$")]

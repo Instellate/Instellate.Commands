@@ -5,7 +5,7 @@ using Instellate.Commands.Commands;
 
 namespace Instellate.Commands.Converters;
 
-public partial class DiscordUserConverter : IConverter<DiscordUser>
+public partial class DiscordMemberConverter : IConverter<DiscordMember>
 {
     public DiscordApplicationCommandOptionType Type => DiscordApplicationCommandOptionType.User;
 
@@ -22,7 +22,7 @@ public partial class DiscordUserConverter : IConverter<DiscordUser>
         };
     }
 
-    public async ValueTask<object?> ConvertFromObject(object? obj, IActionContext context)
+    public ValueTask<object?> ConvertFromObject(object? obj, IActionContext context)
     {
         if (obj is not ulong userId)
         {
@@ -31,15 +31,20 @@ public partial class DiscordUserConverter : IConverter<DiscordUser>
 
         if (context is InteractionActionContext interaction)
         {
-            DiscordUser user
-                = interaction.Interaction.Data.Resolved.Users[userId];
-            return user;
+            DiscordMember member
+                = interaction.Interaction.Data.Resolved.Members[userId];
+            return ValueTask.FromResult<object?>(member);
         }
 
-        return await context.Client.GetUserAsync(userId);
+        if (context.Guild is null)
+        {
+            throw new ArgumentNullException(nameof(context), "Property `Guild` is null");
+        }
+
+        return ValueTask.FromResult<object?>(context.Guild.Members[userId]);
     }
 
-    public async ValueTask<object?> ConvertFromString(
+    public ValueTask<object?> ConvertFromString(
         Optional<string> input,
         IActionContext context
     )
@@ -49,9 +54,14 @@ public partial class DiscordUserConverter : IConverter<DiscordUser>
             throw new ArgumentNullException(nameof(input));
         }
 
+        if (context.Guild is null)
+        {
+            throw new ArgumentNullException(nameof(context), "Property `Guild` is null");
+        }
+
         if (ulong.TryParse(value, out ulong userId))
         {
-            return await context.Client.GetUserAsync(userId);
+            return ValueTask.FromResult<object?>(context.Guild.Members[userId]);
         }
 
         Regex userMention = UserMentionRegex();
@@ -59,7 +69,7 @@ public partial class DiscordUserConverter : IConverter<DiscordUser>
         if (match.Success)
         {
             userId = ulong.Parse(match.Groups[1].Value);
-            return await context.Client.GetUserAsync(userId);
+            return ValueTask.FromResult<object?>(context.Guild.Members[userId]);
         }
 
         throw new ArgumentException("Input does not follow user format", nameof(input));
@@ -67,8 +77,4 @@ public partial class DiscordUserConverter : IConverter<DiscordUser>
 
     [GeneratedRegex(@"^<@!?(\d+)>$")]
     private static partial Regex UserMentionRegex();
-
-    // ReSharper disable once UnusedMember.Local Might have use later
-    [GeneratedRegex(@"^(?:[a-z]|\.[a-z_])+\.?$", RegexOptions.IgnoreCase)]
-    private static partial Regex UsernameRegex();
 }

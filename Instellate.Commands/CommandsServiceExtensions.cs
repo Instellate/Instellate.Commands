@@ -72,12 +72,18 @@ public static class CommandsServiceExtensions
         collection
             .AddSingleton<ControllerFactory>()
             .AddConverter<StringConverter, string>()
-            .AddConverter<Int32Converter, int>()
-            .AddConverter<Int64Converter, long>()
+            .AddConverter<IntegerConverter<short>, short>()
+            .AddConverter<IntegerConverter<int>, int>()
+            .AddConverter<IntegerConverter<long>, long>()
+            .AddConverter<IntegerConverter<ushort>, ushort>()
+            .AddConverter<IntegerConverter<uint>, uint>()
             .AddConverter<DoubleConverter, double>()
             .AddConverter<BoolConverter, bool>()
             .AddConverter<DiscordUserConverter, DiscordUser>()
-            .AddConverter<DiscordChannelConverter, DiscordChannel>();
+            .AddConverter<DiscordChannelConverter, DiscordChannel>()
+            .AddConverter<DiscordRoleConverter, DiscordRole>()
+            .AddConverter<DiscordMemberConverter, DiscordMember>()
+            .AddConverter<SnowflakeObjectConverter, SnowflakeObject>();
 
         return collection;
     }
