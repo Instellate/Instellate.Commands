@@ -42,6 +42,11 @@ public class CommandOption
     /// </summary>
     public int? Positional { get; set; }
 
+    /// <summary>
+    /// Possible choices that the command can be
+    /// </summary>
+    public IReadOnlyList<DiscordApplicationCommandOptionChoice> Choices { get; set; } = [];
+
     // These should always be set
 
     /// <summary>
@@ -58,6 +63,7 @@ public class CommandOption
     /// The default value of the command option
     /// </summary>
     public object? DefaultValue { get; internal set; }
+
 
     public CommandOption(string name, string description, bool optional, int? positional)
     {
@@ -79,7 +85,8 @@ public class CommandOption
             this.Type,
             !this.Optional,
             minValue: this.MinValue!,
-            maxValue: this.MaxValue!
+            maxValue: this.MaxValue!,
+            choices: this.Choices
         );
     }
 }

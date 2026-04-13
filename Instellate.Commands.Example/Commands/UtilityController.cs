@@ -7,6 +7,12 @@ namespace Instellate.Commands.Example.Commands;
 [Command("utility", "Commands related to utility")]
 public class UtilityController : BaseController
 {
+    public enum Test
+    {
+        [ChoiceName("hello")] Hello,
+        There
+    }
+
     [Command("echo", "Echo a message")]
     public IActionResult Echo([Option("content", "The content to echo")] string content)
     {
@@ -74,6 +80,12 @@ public class UtilityController : BaseController
             default:
                 return Empty();
         }
+    }
+
+    [Command("enum", "Enum test")]
+    public IActionResult EnumTest([Option("test", "The test enum")] Test value)
+    {
+        return Text($"Value: {value}");
     }
 
     [ContextMenu("Get User Info")]

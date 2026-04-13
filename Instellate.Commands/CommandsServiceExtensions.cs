@@ -88,7 +88,7 @@ public static class CommandsServiceExtensions
         return collection;
     }
 
-    internal static IServiceCollection AddConverter<TConverter, TValue>(
+    public static IServiceCollection AddConverter<TConverter, TValue>(
         this IServiceCollection collection
     )
         where TConverter : class, IConverter<TValue>
