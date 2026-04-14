@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using DSharpPlus.Entities;
 using Instellate.Commands.Actions;
+using Instellate.Commands.Attributes.Application;
 
 namespace Instellate.Commands;
 
@@ -17,17 +18,30 @@ public class ContextMenu
     public string Name { get; }
     public DiscordApplicationCommandType Type { get; }
 
+    public IReadOnlyList<DiscordInteractionContextType>? Contexts { get; }
+    public IReadOnlyList<DiscordApplicationIntegrationType>? IntegrationTypes { get; }
+
     public ContextMenu(string name, MethodInfo method)
     {
         this.Name = name;
         this.Type = GetCommandType(method);
+        this.Contexts = method.GetCustomAttribute<AppContextsAttribute>()?.Contexts;
+        this.IntegrationTypes
+            = method.GetCustomAttribute<AppIntegrationAttribute>()?.IntegrationTypes;
+
         this._executionLambda = BuildExecutionLambda(method, this.Type);
         this._controllerType = method.DeclaringType!;
     }
 
     public DiscordApplicationCommand ConstructApplicationCommand()
     {
-        return new DiscordApplicationCommand(this.Name, null!, type: this.Type);
+        return new DiscordApplicationCommand(
+            this.Name,
+            null!,
+            type: this.Type,
+            contexts: this.Contexts,
+            integrationTypes: this.IntegrationTypes
+        );
     }
 
     private static DiscordApplicationCommandType GetCommandType(MethodInfo method)

@@ -588,7 +588,8 @@ public class ControllerFactory
             CommandOption commandOption = converter.ConstructOption(metadata);
             commandOption.ConverterType = converterType;
             commandOption.ParameterType = parameter.ParameterType;
-            commandOption.DefaultValue = parameter.DefaultValue;
+            commandOption.DefaultValue
+                = parameter.DefaultValue == DBNull.Value ? null : parameter.DefaultValue;
             options.Add(commandOption);
         }
 
