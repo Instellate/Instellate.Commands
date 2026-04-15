@@ -11,17 +11,27 @@ public interface IActionContext
     /// <summary>
     /// The discord client used in the context
     /// </summary>
-    public DiscordClient Client { get; }
+    DiscordClient Client { get; }
 
     /// <summary>
     /// The author of the action
     /// </summary>
-    public DiscordUser Author { get; }
+    DiscordUser Author { get; }
 
     /// <summary>
-    /// The guild of the action
+    /// The channel tied to the action
     /// </summary>
-    public DiscordGuild? Guild { get; }
+    DiscordChannel Channel { get; }
+
+    /// <summary>
+    /// The guild tied to the action
+    /// </summary>
+    DiscordGuild? Guild { get; }
+
+    /// <summary>
+    /// The message tied to the action
+    /// </summary>
+    DiscordMessage? Message { get; }
 
     /// <summary>
     /// Defers the reply for later longer wait time responses

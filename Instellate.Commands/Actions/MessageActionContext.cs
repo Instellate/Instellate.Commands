@@ -7,7 +7,7 @@ namespace Instellate.Commands.Actions;
 public sealed class MessageActionContext : IActionContext
 {
     private int _deferred;
-    private DiscordMessage? _message = null;
+    private DiscordMessage? _responseMessage;
 
     /// <summary>
     ///  The message creation event arguments
@@ -19,6 +19,12 @@ public sealed class MessageActionContext : IActionContext
 
     /// <inheritdoc/>
     public DiscordUser Author => this.MessageEvent.Author;
+
+    /// <inheritdoc/>
+    public DiscordChannel Channel => this.MessageEvent.Channel;
+
+    /// <inheritdoc/>
+    public DiscordMessage Message => this.MessageEvent.Message;
 
     // ReSharper disable once ReturnTypeCanBeNotNullable Can be null
     /// <inheritdoc/>
@@ -45,7 +51,7 @@ public sealed class MessageActionContext : IActionContext
     public async Task CreateResponseAsync(IDiscordMessageBuilder builder, bool ephemeral)
     {
         DiscordMessageBuilder messageBuilder = new(builder);
-        this._message = await this.MessageEvent.Message.RespondAsync(messageBuilder);
+        this._responseMessage = await this.MessageEvent.Message.RespondAsync(messageBuilder);
     }
 
     /// <summary>
@@ -63,19 +69,19 @@ public sealed class MessageActionContext : IActionContext
     public Task CreateFollowUpResponseAsync(IDiscordMessageBuilder builder, bool ephemeral = false)
     {
         DiscordMessageBuilder messageBuilder = new(builder);
-        if (this._message is null)
+        if (this._responseMessage is null)
         {
             throw new CommandsException(
                 "Cannot create a follow up when the initial response has not been created"
             );
         }
 
-        return this._message.RespondAsync(messageBuilder);
+        return this._responseMessage.RespondAsync(messageBuilder);
     }
 
     /// <inheritdoc/>
     public Task<DiscordMessage?> GetResponseMessageAsync()
     {
-        return Task.FromResult(this._message);
+        return Task.FromResult(this._responseMessage);
     }
 }

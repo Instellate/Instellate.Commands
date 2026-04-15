@@ -313,11 +313,7 @@ public class ControllerFactory
                 executor,
                 options,
                 scope.ServiceProvider,
-                actionContext,
-                client,
-                e.Author,
-                e.Channel,
-                e.Message
+                actionContext
             );
         }
         catch (Exception exception)
@@ -501,11 +497,7 @@ public class ControllerFactory
                 executor,
                 options,
                 scope.ServiceProvider,
-                actionContext,
-                client,
-                interaction.User,
-                interaction.Channel,
-                interaction.Message
+                actionContext
             );
         }
         catch (Exception exception)
@@ -534,11 +526,7 @@ public class ControllerFactory
         BaseController controller = PrepareController(
             menu._controllerType,
             scope.ServiceProvider,
-            actionContext,
-            client,
-            interaction.User,
-            interaction.Channel,
-            interaction.Message
+            actionContext
         );
 
         IActionResult actionResult = await menu._executionLambda(controller);
@@ -596,23 +584,31 @@ public class ControllerFactory
         return options;
     }
 
-    private BaseController PrepareController(
+    // ReSharper disable once MemberCanBePrivate.Global
+    /// <summary>
+    /// Prepares a controller for execution
+    /// </summary>
+    /// <param name="type">
+    /// The controller type used to get the contoller from the <paramref name="provider"/>
+    /// </param>
+    /// <param name="provider">
+    /// The current service provider.
+    /// Used for getting the controller 
+    /// </param>
+    /// <param name="actionContext">The action context used for this execution</param>
+    /// <returns></returns>
+    /// <remarks>
+    /// This is used internally, only exposed for others to create their own IActionContext handling.
+    /// </remarks>
+    public BaseController PrepareController(
         Type type,
         IServiceProvider provider,
-        IActionContext actionContext,
-        DiscordClient client,
-        DiscordUser author,
-        DiscordChannel channel,
-        DiscordMessage? message
+        IActionContext actionContext
     )
     {
         BaseController controller =
             (BaseController)provider.GetRequiredService(type);
         controller.ActionContext = actionContext;
-        controller.Client = client;
-        controller.Author = author;
-        controller.Channel = channel;
-        controller.Message = message;
 
         return controller;
     }
@@ -621,21 +617,13 @@ public class ControllerFactory
         Command command,
         IReadOnlyList<object?> options,
         IServiceProvider provider,
-        IActionContext actionContext,
-        DiscordClient client,
-        DiscordUser author,
-        DiscordChannel channel,
-        DiscordMessage? message
+        IActionContext actionContext
     )
     {
         BaseController controller = PrepareController(
             command._method.DeclaringType!,
             provider,
-            actionContext,
-            client,
-            author,
-            channel,
-            message
+            actionContext
         );
 
         IActionResult result = await command._executionLambda(controller, options);

@@ -23,6 +23,12 @@ public sealed class InteractionActionContext : IActionContext
     public DiscordUser Author => this.Interaction.User;
 
     /// <inheritdoc/>
+    public DiscordChannel Channel => this.Interaction.Channel;
+
+    /// <inheritdoc/>
+    public DiscordMessage? Message => this.Interaction.Message;
+
+    /// <inheritdoc/>
     public DiscordGuild? Guild => this.Interaction.Guild;
 
     public InteractionActionContext(DiscordInteraction interaction, DiscordClient client)

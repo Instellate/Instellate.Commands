@@ -11,11 +11,30 @@ namespace Instellate.Commands;
 /// </summary>
 public abstract class BaseController
 {
-    public DiscordClient Client { get; internal set; } = null!;
-    public DiscordUser Author { get; internal set; } = null!;
-    public DiscordChannel Channel { get; internal set; } = null!;
+    /// <summary>
+    /// The currnet action context
+    /// </summary>
     public IActionContext ActionContext { get; internal set; } = null!;
-    public DiscordMessage? Message { get; internal set; }
+
+    /// <summary>
+    /// Shortcut for getting the <see cref="DiscordClient"/>
+    /// </summary>
+    public DiscordClient Client => this.ActionContext.Client;
+
+    /// <summary>
+    /// Shortcut for getting the author
+    /// </summary>
+    public DiscordUser Author => this.ActionContext.Author;
+
+    /// <summary>
+    /// Shortcut for getting the channel
+    /// </summary>
+    public DiscordChannel Channel => this.ActionContext.Channel;
+
+    /// <summary>
+    /// Shortcut for getting the message
+    /// </summary>
+    public DiscordMessage? Message => this.ActionContext.Message;
 
     /// <summary>
     /// Create an action result for dicord message that derives content from a message builder
