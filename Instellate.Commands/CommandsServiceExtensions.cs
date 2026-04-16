@@ -28,7 +28,7 @@ public static class CommandsServiceExtensions
     /// <param name="client"></param>
     /// <param name="debugGuildId">Guild id to register it to, all commands will be registered public if null is specified</param>
     /// <returns></returns>
-    public static Task RegisterApplicationCommands(
+    public static Task<IReadOnlyList<DiscordApplicationCommand>> RegisterApplicationCommands(
         this DiscordClient client,
         ulong? debugGuildId = null
     )

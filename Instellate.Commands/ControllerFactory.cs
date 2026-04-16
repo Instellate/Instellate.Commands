@@ -107,7 +107,10 @@ public class ControllerFactory
         this._logger.LogTrace("Finished mapping controllers");
     }
 
-    public Task RegisterCommandsAsync(DiscordClient client, ulong? debugGuildId)
+    public Task<IReadOnlyList<DiscordApplicationCommand>> RegisterCommandsAsync(
+        DiscordClient client,
+        ulong? debugGuildId
+    )
     {
         List<DiscordApplicationCommand> commands
             = new(this._commands.Count + this._contextMenus.Count);
